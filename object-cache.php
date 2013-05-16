@@ -832,7 +832,7 @@ class WP_Object_Cache {
 			return true;
 		}
 
-		if ( $this->redis-exists( $derived_key ) ) {
+		if ( $this->redis->exists( $derived_key ) ) {
 			return false;
 		}
 
