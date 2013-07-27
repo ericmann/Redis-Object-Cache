@@ -780,7 +780,7 @@ class WP_Object_Cache {
 	 * @param   null $persistent_id      To create an instance that persists between requests, use persistent_id to specify a unique ID for the instance.
 	 */
 	public function __construct() {
-		include 'predis/autoload.php';
+		require_once 'predis/autoload.php';
 
 		$this->redis = new Predis\Client( '' );
 
@@ -1009,5 +1009,29 @@ class WP_Object_Cache {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Sets the list of global groups.
+	 *
+	 * @param array $groups List of groups that are global.
+	 */
+	function add_global_groups( $groups ) {
+		$groups = (array) $groups;
+
+		$groups = array_fill_keys( $groups, true );
+		$this->global_groups = array_merge( $this->global_groups, $groups );
+	}
+
+	/**
+	 * Sets the list of groups not to be cached by Redis.
+	 *
+	 * @param array $groups List of groups that are to be ignored.
+	 */
+	function add_non_persistent_groups( $groups ) {
+		$groups = (array) $groups;
+
+		$groups = array_fill_keys( $groups, true );
+		$this->no_redis_groups = array_merge( $this->no_redis_groups, $groups );
 	}
 }
