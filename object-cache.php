@@ -94,17 +94,6 @@ function wp_cache_get( $key, $group = '' ) {
 }
 
 /**
- * Get server pool statistics.
- *
- * @return array    Array of server statistics, one entry per server.
- */
-function wp_cache_get_stats() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->stats();
-}
-
-/**
  * Increment a numeric item's value.
  *
  * @param string $key    The key under which to store the value.
@@ -234,6 +223,20 @@ class WP_Object_Cache {
 	 * @var string
 	 */
 	public $blog_prefix = '';
+
+	/**
+	 * Track how many requests were found in cache
+	 *
+	 * @var int
+	 */
+	public $cache_hits = 0;
+
+	/**
+	 * Track how may requests were not cached
+	 *
+	 * @var int
+	 */
+	public $cache_misses = 0;
 
 	/**
 	 * Instantiate the Redis class.
@@ -384,15 +387,19 @@ class WP_Object_Cache {
 
 		if ( in_array( $group, $this->no_redis_groups ) ) {
 			if ( isset( $this->cache[$derived_key] ) ) {
+				$this->cache_hits++;
 				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
-			} elseif ( in_array( $group, $this->no_redis_groups ) ) {
+			} else {
+				$this->cache_misses++;
 				return false;
 			}
 		}
 
 		if ( $this->redis->exists( $derived_key ) ) {
+			$this->cache_hits++;
 			$value = $this->restore_value_from_redis( $this->redis->get( $derived_key ) );
 		} else {
+			$this->cache_misses;
 			return false;
 		}
 
@@ -430,8 +437,6 @@ class WP_Object_Cache {
 		} else {
 			$result = $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) );
 		}
-
-		$this->add_to_internal_cache( $derived_key, $value );
 
 		return $result;
 	}
@@ -492,6 +497,26 @@ class WP_Object_Cache {
 		$this->add_to_internal_cache( $derived_key, (int) $this->redis->get( $derived_key ) );
 
 		return $result;
+	}
+
+	/**
+	 * Render data about current cache requests
+	 *
+	 * @return string
+	 */
+	public function stats() {
+		?><p>
+			<strong>Cache Hits:</strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
+			<strong>Cache Misses:</strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
+		</p>
+		<p>&nbsp;</p>
+		<p><strong>Caches Retrieved:</strong></p>
+		<ul>
+			<li><em>prefix:group:key - size in kilobytes</em></li>
+		<?php foreach ( $this->cache as $group => $cache ) : ?>
+			<li><?php echo esc_html( $group ); ?> - <?php echo number_format_i18n( strlen( serialize( $cache ) ) / 1024, 2 ); ?> kb</li>
+		<?php endforeach; ?>
+		</ul><?php
 	}
 
 	/**
