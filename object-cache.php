@@ -469,6 +469,64 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * Increment a Redis counter by the amount specified
+	 *
+	 * @param  string $key
+	 * @param  int    $offset
+	 * @param  string $group
+	 * @return bool
+	 */
+	public function increment( $key, $offset = 1, $group = 'default' ) {
+		$derived_key = $this->build_key( $key, $group );
+		$offset = (int) $offset;
+
+		// If group is a non-Redis group, save to runtime cache, not Redis
+		if ( in_array( $group, $this->no_redis_groups ) ) {
+			$value = $this->get_from_runtime_cache( $derived_key );
+			$value += $offset;
+			$this->add_to_internal_cache( $derived_key, $value );
+
+			return true;
+		}
+
+		// Save to Redis
+		$result = $this->redis->incrBy( $derived_key, $offset );
+
+		$this->add_to_internal_cache( $derived_key, (int) $this->redis->get( $derived_key ) );
+
+		return $result;
+	}
+
+	/**
+	 * Decrement a Redis counter by the amount specified
+	 *
+	 * @param  string $key
+	 * @param  int    $offset
+	 * @param  string $group
+	 * @return bool
+	 */
+	public function decrement( $key, $offset = 1, $group = 'default' ) {
+		$derived_key = $this->build_key( $key, $group );
+		$offset = (int) $offset;
+
+		// If group is a non-Redis group, save to runtime cache, not Redis
+		if ( in_array( $group, $this->no_redis_groups ) ) {
+			$value = $this->get_from_runtime_cache( $derived_key );
+			$value -= $offset;
+			$this->add_to_internal_cache( $derived_key, $value );
+
+			return true;
+		}
+
+		// Save to Redis
+		$result = $this->redis->decrBy( $derived_key, $offset );
+
+		$this->add_to_internal_cache( $derived_key, (int) $this->redis->get( $derived_key ) );
+
+		return $result;
+	}
+
+	/**
 	 * Builds a key for the cached object using the blog_id, key, and group values.
 	 *
 	 * @author  Ryan Boren   This function is inspired by the original WP Memcached Object cache.
