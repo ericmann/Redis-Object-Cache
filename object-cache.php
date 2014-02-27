@@ -416,7 +416,7 @@ class WP_Object_Cache {
 		}
 
 		$this->cache = array();
-		$result = $this->parse_predis_response( $this->redis->flushall() );
+		$result = $this->parse_predis_response( $this->redis->flushdb() );
 
 		return $result;
 	}
