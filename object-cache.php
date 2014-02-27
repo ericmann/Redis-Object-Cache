@@ -1071,8 +1071,7 @@ class WP_Object_Cache {
 	function add_global_groups( $groups ) {
 		$groups = (array) $groups;
 
-		$groups = array_fill_keys( $groups, true );
-		$this->global_groups = array_merge( $this->global_groups, $groups );
+		$this->global_groups = array_unique( array_merge( $this->global_groups, $groups ) );
 	}
 
 	/**
@@ -1083,7 +1082,6 @@ class WP_Object_Cache {
 	function add_non_persistent_groups( $groups ) {
 		$groups = (array) $groups;
 
-		$groups = array_fill_keys( $groups, true );
-		$this->no_redis_groups = array_merge( $this->no_redis_groups, $groups );
+		$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
 	}
 }
