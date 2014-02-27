@@ -37,8 +37,6 @@ function wp_cache_close() {
 /**
  * Decrement a numeric item's value.
  *
- * @link http://www.php.net/manual/en/memcached.decrement.php
- *
  * @param string $key    The key under which to store the value.
  * @param int    $offset The amount by which to decrement the item's value.
  * @param string $group  The group value appended to the $key.
@@ -57,8 +55,6 @@ function wp_cache_decrement( $key, $offset = 1, $group = '' ) {
  * Same as wp_cache_decrement. Original WordPress caching backends use wp_cache_decr. I
  * want both spellings to work.
  *
- * @link http://www.php.net/manual/en/memcached.decrement.php
- *
  * @param string $key    The key under which to store the value.
  * @param int    $offset The amount by which to decrement the item's value.
  * @param string $group  The group value appended to the $key.
@@ -71,13 +67,6 @@ function wp_cache_decr( $key, $offset = 1, $group = '' ) {
 
 /**
  * Remove the item from the cache.
- *
- * Remove an item from memcached with identified by $key after $time seconds. The
- * $time parameter allows an object to be queued for deletion without immediately
- * deleting. Between the time that it is queued and the time it's deleted, add,
- * replace, and get will fail, but set will succeed.
- *
- * @link http://www.php.net/manual/en/memcached.delete.php
  *
  * @param string $key    The key under which to store the value.
  * @param string $group  The group value appended to the $key.
@@ -134,8 +123,6 @@ function wp_cache_get_stats() {
 /**
  * Increment a numeric item's value.
  *
- * @link http://www.php.net/manual/en/memcached.increment.php
- *
  * @param string $key    The key under which to store the value.
  * @param int    $offset The amount by which to increment the item's value.
  * @param string $group  The group value appended to the $key.
@@ -154,8 +141,6 @@ function wp_cache_increment( $key, $offset = 1, $group = '' ) {
  * This is the same as wp_cache_increment, but kept for back compatibility. The original
  * WordPress caching backends use wp_cache_incr. I want both to work.
  *
- * @link http://www.php.net/manual/en/memcached.increment.php
- *
  * @param string $key    The key under which to store the value.
  * @param int    $offset The amount by which to increment the item's value.
  * @param string $group  The group value appended to the $key.
@@ -171,8 +156,6 @@ function wp_cache_incr( $key, $offset = 1, $group = '' ) {
  *
  * This method is similar to "add"; however, is does not successfully set a value if
  * the object's key is not already set in cache.
- *
- * @link http://www.php.net/manual/en/memcached.replace.php
  *
  * @param string $key        The key under which to store the value.
  * @param mixed  $value      The value to store.
@@ -190,9 +173,7 @@ function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
 /**
  * Sets a value in cache.
  *
- * The value is set whether or not this key already exists in memcached.
- *
- * @link http://www.php.net/manual/en/memcached.set.php
+ * The value is set whether or not this key already exists in Redis.
  *
  * @param string $key        The key under which to store the value.
  * @param mixed  $value      The value to store.
@@ -219,7 +200,7 @@ function wp_cache_init() {
 }
 
 /**
- * Adds a group or set of groups to the list of non-persistent groups.
+ * Adds a group or set of groups to the list of Redis groups.
  *
  * @param   string|array $groups     A group or an array of groups to add.
  *
@@ -231,7 +212,7 @@ function wp_cache_add_global_groups( $groups ) {
 }
 
 /**
- * Adds a group or set of groups to the list of non-Memcached groups.
+ * Adds a group or set of groups to the list of non-Redis groups.
  *
  * @param   string|array $groups     A group or an array of groups to add.
  *
@@ -455,9 +436,7 @@ class WP_Object_Cache {
 	/**
 	 * Sets a value in cache.
 	 *
-	 * The value is set whether or not this key already exists in memcached.
-	 *
-	 * @link http://www.php.net/manual/en/memcached.set.php
+	 * The value is set whether or not this key already exists in Redis.
 	 *
 	 * @param   string $key        The key under which to store the value.
 	 * @param   mixed  $value      The value to store.
