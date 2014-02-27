@@ -855,7 +855,7 @@ class WP_Object_Cache {
 		// Save to Redis
 		$expiration = absint( $expiration );
 		if ( $expiration ) {
-			$result = $this->redis->setex( $derived_key, $this->prepare_value_for_redis( $value ), $expiration );
+			$result = $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) );
 		} else {
 			$result = $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) );
 		}
@@ -982,7 +982,7 @@ class WP_Object_Cache {
 		// Save to Redis
 		$expiration = absint( $expiration );
 		if ( $expiration ) {
-			$result = $this->redis->setex( $derived_key, $this->prepare_value_for_redis( $value ), $expiration );
+			$result = $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) );
 		} else {
 			$result = $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) );
 		}
