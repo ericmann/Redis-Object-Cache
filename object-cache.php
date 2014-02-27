@@ -43,26 +43,10 @@ function wp_cache_close() {
  *
  * @return int|bool         Returns item's new value on success or FALSE on failure.
  */
-function wp_cache_decrement( $key, $offset = 1, $group = '' ) {
+function wp_cache_decr( $key, $offset = 1, $group = '' ) {
 	global $wp_object_cache;
 
 	return $wp_object_cache->decrement( $key, $offset, $group );
-}
-
-/**
- * Decrement a numeric item's value.
- *
- * Same as wp_cache_decrement. Original WordPress caching backends use wp_cache_decr. I
- * want both spellings to work.
- *
- * @param string $key    The key under which to store the value.
- * @param int    $offset The amount by which to decrement the item's value.
- * @param string $group  The group value appended to the $key.
- *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
- */
-function wp_cache_decr( $key, $offset = 1, $group = '' ) {
-	return wp_cache_decrement( $key, $offset, $group );
 }
 
 /**
@@ -129,26 +113,10 @@ function wp_cache_get_stats() {
  *
  * @return int|bool         Returns item's new value on success or FALSE on failure.
  */
-function wp_cache_increment( $key, $offset = 1, $group = '' ) {
+function wp_cache_incr( $key, $offset = 1, $group = '' ) {
 	global $wp_object_cache;
 
 	return $wp_object_cache->increment( $key, $offset, $group );
-}
-
-/**
- * Increment a numeric item's value.
- *
- * This is the same as wp_cache_increment, but kept for back compatibility. The original
- * WordPress caching backends use wp_cache_incr. I want both to work.
- *
- * @param string $key    The key under which to store the value.
- * @param int    $offset The amount by which to increment the item's value.
- * @param string $group  The group value appended to the $key.
- *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
- */
-function wp_cache_incr( $key, $offset = 1, $group = '' ) {
-	return wp_cache_increment( $key, $offset, $group );
 }
 
 /**
