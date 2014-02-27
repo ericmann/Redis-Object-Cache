@@ -913,6 +913,7 @@ class WP_Object_Cache {
 			sleep( $delay );
 		}
 
+		$this->cache = array();
 		$result = $this->redis->flushall();
 
 		return $result;
