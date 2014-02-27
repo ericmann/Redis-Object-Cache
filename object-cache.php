@@ -1023,6 +1023,8 @@ class WP_Object_Cache {
 	 */
 	protected function prepare_value_for_redis( $value ) {
 		$value = maybe_serialize( $value );
+
+		return $value;
 	}
 
 	/**
@@ -1033,6 +1035,8 @@ class WP_Object_Cache {
 	 */
 	protected function restore_value_from_redis( $value ) {
 		$value = maybe_unserialize( $value );
+
+		return $value;
 	}
 
 	/**
