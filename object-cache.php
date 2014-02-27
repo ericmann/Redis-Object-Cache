@@ -161,15 +161,13 @@ function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
  *
  * This changes the blog id used to create keys in blog specific groups.
  *
- * @since 3.5.0
- *
- * @param int $blog_id Blog ID
+ * @param  int $_blog_id Blog ID
+ * @return bool
  */
-// function wp_cache_switch_to_blog( $blog_id ) {
-// 	global $wp_object_cache;
-
-// 	return $wp_object_cache->switch_to_blog( $blog_id );
-// }
+function wp_cache_switch_to_blog( $_blog_id ) {
+	global $wp_object_cache;
+	return $wp_object_cache->switch_to_blog( $_blog_id );
+}
 
 /**
  * Adds a group or set of groups to the list of Redis groups.
@@ -292,10 +290,8 @@ class WP_Object_Cache {
 		}
 
 		// Assign global and blog prefixes for use with keys
-		if ( function_exists( 'is_multisite' ) ) {
-			$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
-			$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
-		}
+		$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
+		$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
 	}
 
 	/**
@@ -672,11 +668,26 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * In multisite, switch blog prefix when switching blogs
+	 *
+	 * @param int $_blog_id
+	 * @return bool
+	 */
+	public function switch_to_blog( $_blog_id ) {
+		if ( ! is_multisite() ) {
+			return false;
+		}
+
+		$this->blog_prefix = $_blog_id . ':';
+		return true;
+	}
+
+	/**
 	 * Sets the list of global groups.
 	 *
 	 * @param array $groups List of groups that are global.
 	 */
-	function add_global_groups( $groups ) {
+	public function add_global_groups( $groups ) {
 		$groups = (array) $groups;
 
 		$this->global_groups = array_unique( array_merge( $this->global_groups, $groups ) );
@@ -687,7 +698,7 @@ class WP_Object_Cache {
 	 *
 	 * @param array $groups List of groups that are to be ignored.
 	 */
-	function add_non_persistent_groups( $groups ) {
+	public function add_non_persistent_groups( $groups ) {
 		$groups = (array) $groups;
 
 		$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
