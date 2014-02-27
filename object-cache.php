@@ -827,12 +827,10 @@ class WP_Object_Cache {
 	 * @param   mixed  $value          The value to store.
 	 * @param   string $group          The group value appended to the $key.
 	 * @param   int    $expiration     The expiration time, defaults to 0.
-	 * @param   string $server_key     The key identifying the server to store the value on.
-	 * @param   bool   $byKey          True to store in internal cache by key; false to not store by key
 	 *
 	 * @return  bool                        Returns TRUE on success or FALSE on failure.
 	 */
-	public function add( $key, $value, $group = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
+	public function add( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to runtime cache, not Redis
@@ -866,31 +864,20 @@ class WP_Object_Cache {
 	/**
 	 * Remove the item from the cache.
 	 *
-	 * Remove an item from memcached with identified by $key after $time seconds. The
-	 * $time parameter allows an object to be queued for deletion without immediately
-	 * deleting. Between the time that it is queued and the time it's deleted, add,
-	 * replace, and get will fail, but set will succeed.
-	 *
-	 * @link http://www.php.net/manual/en/memcached.delete.php
-	 *
 	 * @param   string $key        The key under which to store the value.
 	 * @param   string $group      The group value appended to the $key.
-	 * @param   int    $time       The amount of time the server will wait to delete the item in seconds.
-	 * @param   string $server_key The key identifying the server to store the value on.
-	 * @param   bool   $byKey      True to store in internal cache by key; false to not store by key
-	 *
-	 * @return  bool                    Returns TRUE on success or FALSE on failure.
+	 * @return  bool               Returns TRUE on success or FALSE on failure.
 	 */
-	public function delete( $key, $group = 'default', $time = 0, $server_key = '', $byKey = false ) {
+	public function delete( $key, $group = 'default' ) {
 		$derived_key = $this->build_key( $key, $group );
 
 		// Remove from no_mc_groups array
 		if ( in_array( $group, $this->no_redis_groups ) ) {
 			if ( isset( $this->cache[$derived_key] ) ) {
 				unset( $this->cache[$derived_key] );
-			}
 
-			return true;
+				return true;
+			}
 		}
 
 		$result = $this->redis->del( $derived_key );
@@ -926,12 +913,10 @@ class WP_Object_Cache {
 	 *
 	 * @param   string        $key        The key under which to store the value.
 	 * @param   string        $group      The group value appended to the $key.
-	 * @param   string        $server_key The key identifying the server to store the value on.
-	 * @param   bool          $byKey      True to store in internal cache by key; false to not store by key
 	 *
 	 * @return  bool|mixed                  Cached object value.
 	 */
-	public function get( $key, $group = 'default', $server_key = '', $byKey = false ) {
+	public function get( $key, $group = 'default' ) {
 		$derived_key = $this->build_key( $key, $group );
 
 		if ( in_array( $group, $this->no_redis_groups ) ) {
@@ -964,12 +949,10 @@ class WP_Object_Cache {
 	 * @param   mixed  $value      The value to store.
 	 * @param   string $group      The group value appended to the $key.
 	 * @param   int    $expiration The expiration time, defaults to 0.
-	 * @param   string $server_key The key identifying the server to store the value on.
-	 * @param   bool   $byKey      True to store in internal cache by key; false to not store by key
 	 *
 	 * @return  bool                    Returns TRUE on success or FALSE on failure.
 	 */
-	public function set( $key, $value, $group = 'default', $expiration = 0, $server_key = '' ) {
+	public function set( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to runtime cache, not Redis
