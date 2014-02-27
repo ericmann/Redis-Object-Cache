@@ -10,11 +10,10 @@
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
  *
- * @return bool                 Returns TRUE on success or FALSE on failure.
+ * @return bool              Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_add( $key, $value, $group = '', $expiration = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->add( $key, $value, $group, $expiration );
 }
 
@@ -25,8 +24,6 @@ function wp_cache_add( $key, $value, $group = '', $expiration = 0 ) {
  * functionality was removed along with the rest of the persistent cache. This
  * does not mean that plugins can't implement this function when they need to
  * make sure that the cache is cleaned up after WordPress no longer needs it.
- *
- * @since 2.0.0
  *
  * @return  bool    Always returns True
  */
@@ -41,11 +38,10 @@ function wp_cache_close() {
  * @param int    $offset The amount by which to decrement the item's value.
  * @param string $group  The group value appended to the $key.
  *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
+ * @return int|bool      Returns item's new value on success or FALSE on failure.
  */
 function wp_cache_decr( $key, $offset = 1, $group = '' ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->decrement( $key, $offset, $group );
 }
 
@@ -56,11 +52,10 @@ function wp_cache_decr( $key, $offset = 1, $group = '' ) {
  * @param string $group  The group value appended to the $key.
  * @param int    $time   The amount of time the server will wait to delete the item in seconds.
  *
- * @return bool             Returns TRUE on success or FALSE on failure.
+ * @return bool           Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_delete( $key, $group = '', $time = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->delete( $key, $group, $time );
 }
 
@@ -73,7 +68,6 @@ function wp_cache_delete( $key, $group = '', $time = 0 ) {
  */
 function wp_cache_flush( $delay = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->flush( $delay );
 }
 
@@ -85,11 +79,10 @@ function wp_cache_flush( $delay = 0 ) {
  * @param string      $key        The key under which to store the value.
  * @param string      $group      The group value appended to the $key.
  *
- * @return bool|mixed               Cached object value.
+ * @return bool|mixed             Cached object value.
  */
 function wp_cache_get( $key, $group = '' ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->get( $key, $group );
 }
 
@@ -100,11 +93,10 @@ function wp_cache_get( $key, $group = '' ) {
  * @param int    $offset The amount by which to increment the item's value.
  * @param string $group  The group value appended to the $key.
  *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
+ * @return int|bool      Returns item's new value on success or FALSE on failure.
  */
 function wp_cache_incr( $key, $offset = 1, $group = '' ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->increment( $key, $offset, $group );
 }
 
@@ -130,11 +122,10 @@ function wp_cache_init() {
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
  *
- * @return bool                 Returns TRUE on success or FALSE on failure.
+ * @return bool              Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->replace( $key, $value, $group, $expiration );
 }
 
@@ -148,11 +139,10 @@ function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
  *
- * @return bool                 Returns TRUE on success or FALSE on failure.
+ * @return bool              Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->set( $key, $value, $group, $expiration );
 }
 
@@ -406,8 +396,7 @@ class WP_Object_Cache {
 	 * Invalidate all items in the cache.
 	 *
 	 * @param   int $delay      Number of seconds to wait before invalidating the items.
-	 *
-	 * @return  bool                Returns TRUE on success or FALSE on failure.
+	 * @return  bool            Returns TRUE on success or FALSE on failure.
 	 */
 	public function flush( $delay = 0 ) {
 		$delay = absint( $delay );
@@ -428,8 +417,7 @@ class WP_Object_Cache {
 	 *
 	 * @param   string        $key        The key under which to store the value.
 	 * @param   string        $group      The group value appended to the $key.
-	 *
-	 * @return  bool|mixed                  Cached object value.
+	 * @return  bool|mixed                Cached object value.
 	 */
 	public function get( $key, $group = 'default' ) {
 		$derived_key = $this->build_key( $key, $group );
@@ -466,8 +454,7 @@ class WP_Object_Cache {
 	 * @param   mixed  $value      The value to store.
 	 * @param   string $group      The group value appended to the $key.
 	 * @param   int    $expiration The expiration time, defaults to 0.
-	 *
-	 * @return  bool                    Returns TRUE on success or FALSE on failure.
+	 * @return  bool               Returns TRUE on success or FALSE on failure.
 	 */
 	public function set( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->build_key( $key, $group );
