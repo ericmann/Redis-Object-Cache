@@ -308,17 +308,51 @@ class WP_Object_Cache {
 	 * @param   mixed  $value          The value to store.
 	 * @param   string $group          The group value appended to the $key.
 	 * @param   int    $expiration     The expiration time, defaults to 0.
-	 *
-	 * @return  bool                        Returns TRUE on success or FALSE on failure.
+	 * @return  bool                   Returns TRUE on success or FALSE on failure.
 	 */
 	public function add( $key, $value, $group = 'default', $expiration = 0 ) {
+		return $this->add_or_replace( true, $key, $value, $group, $expiration );
+	}
+
+	/**
+	 * Replace a value in the cache.
+	 *
+	 * If the specified key doesn't exist, the value is not stored and the function
+	 * returns false.
+	 *
+	 * @param   string $key            The key under which to store the value.
+	 * @param   mixed  $value          The value to store.
+	 * @param   string $group          The group value appended to the $key.
+	 * @param   int    $expiration     The expiration time, defaults to 0.
+	 * @return  bool                   Returns TRUE on success or FALSE on failure.
+	 */
+	public function replace( $key, $value, $group = 'default', $expiration = 0 ) {
+		return $this->add_or_replace( false, $key, $value, $group, $expiration );
+	}
+
+	/**
+	 * Add or replace a value in the cache.
+	 *
+	 * Add does not set the value if the key exists; replace does not replace if the value doesn't exist.
+	 *
+	 * @param   bool   $add            True if should only add if value doesn't exist, false to only add when value already exists
+	 * @param   string $key            The key under which to store the value.
+	 * @param   mixed  $value          The value to store.
+	 * @param   string $group          The group value appended to the $key.
+	 * @param   int    $expiration     The expiration time, defaults to 0.
+	 * @return  bool                   Returns TRUE on success or FALSE on failure.
+	 */
+	protected function add_or_replace( $add, $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
 
-			// Add does not set the value if the key exists; mimic that here
-			if ( isset( $this->cache[$derived_key] ) ) {
+			// Check if conditions are right to continue
+			if (
+				( $add   &&   isset( $this->cache[$derived_key] ) ) ||
+				( ! $add && ! isset( $this->cache[$derived_key] ) )
+			) {
 				return false;
 			}
 
@@ -327,7 +361,11 @@ class WP_Object_Cache {
 			return true;
 		}
 
-		if ( $this->redis->exists( $derived_key ) ) {
+		// Check if conditions are right to continue
+		if (
+			( $add   &&   $this->redis->exists( $derived_key ) ) ||
+			( ! $add && ! $this->redis->exists( $derived_key ) )
+		) {
 			return false;
 		}
 
