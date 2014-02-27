@@ -934,16 +934,18 @@ class WP_Object_Cache {
 	public function get( $key, $group = 'default', $server_key = '', $byKey = false ) {
 		$derived_key = $this->build_key( $key, $group );
 
-		if ( ! in_array( $group, $this->no_redis_groups ) ) {
-			$value = $this->redis->get( $this->restore_value_from_redis( $derived_key ) );
-		} else {
+		if ( in_array( $group, $this->no_redis_groups ) ) {
 			if ( isset( $this->cache[$derived_key] ) ) {
 				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
 			} elseif ( in_array( $group, $this->no_redis_groups ) ) {
 				return false;
-			} else {
-				$value = $this->redis->get( $this->restore_value_from_redis( $derived_key ) );
 			}
+		}
+
+		if ( $this->redis->exists( $derived_key ) ) {
+			$value = $this->restore_value_from_redis( $this->redis->get( $derived_key ) );
+		} else {
+			return false;
 		}
 
 		$this->add_to_internal_cache( $derived_key, $value );
