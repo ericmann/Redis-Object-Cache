@@ -782,7 +782,23 @@ class WP_Object_Cache {
 	public function __construct() {
 		require_once 'predis/autoload.php';
 
-		$this->redis = new Predis\Client( '' );
+		$redis = array(
+			'host' => '127.0.0.1',
+			'port' => 6379,
+		);
+
+		if ( defined( 'WP_REDIS_BACKEND_HOST' ) && WP_REDIS_BACKEND_HOST ) {
+			$redis['host'] = WP_REDIS_BACKEND_HOST;
+		}
+		if ( defined( 'WP_REDIS_BACKEND_PORT' ) && WP_REDIS_BACKEND_PORT ) {
+			$redis['port'] = WP_REDIS_BACKEND_PORT;
+		}
+		if ( defined( 'WP_REDIS_BACKEND_DB' ) && WP_REDIS_BACKEND_DB ) {
+			$redis['database'] = WP_REDIS_BACKEND_DB;
+		}
+
+		$this->redis = new Predis\Client( $redis );
+		unset( $redis );
 
 		global $blog_id, $table_prefix;
 
