@@ -314,7 +314,7 @@ class WP_Object_Cache {
 	public function add( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->build_key( $key, $group );
 
-		// If group is a non-Redis group, save to runtime cache, not Redis
+		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
 
 			// Add does not set the value if the key exists; mimic that here
@@ -438,7 +438,7 @@ class WP_Object_Cache {
 	public function set( $key, $value, $group = 'default', $expiration = 0 ) {
 		$derived_key = $this->build_key( $key, $group );
 
-		// If group is a non-Redis group, save to runtime cache, not Redis
+		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
 			$this->add_to_internal_cache( $derived_key, $value );
 
@@ -468,9 +468,9 @@ class WP_Object_Cache {
 		$derived_key = $this->build_key( $key, $group );
 		$offset = (int) $offset;
 
-		// If group is a non-Redis group, save to runtime cache, not Redis
+		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
-			$value = $this->get_from_runtime_cache( $derived_key );
+			$value = $this->get_from_internal_cache( $derived_key );
 			$value += $offset;
 			$this->add_to_internal_cache( $derived_key, $value );
 
@@ -497,9 +497,9 @@ class WP_Object_Cache {
 		$derived_key = $this->build_key( $key, $group );
 		$offset = (int) $offset;
 
-		// If group is a non-Redis group, save to runtime cache, not Redis
+		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
-			$value = $this->get_from_runtime_cache( $derived_key );
+			$value = $this->get_from_internal_cache( $derived_key );
 			$value -= $offset;
 			$this->add_to_internal_cache( $derived_key, $value );
 
@@ -590,7 +590,7 @@ class WP_Object_Cache {
 	 * @param   mixed  $value          Object value.
 	 */
 	public function add_to_internal_cache( $derived_key, $value ) {
-		$this->cache[ $derived_key ] = $value;
+		$this->cache[$derived_key] = $value;
 	}
 
 	/**
@@ -601,7 +601,7 @@ class WP_Object_Cache {
 	 *
 	 * @return  bool|mixed              Value on success; false on failure.
 	 */
-	public function get_from_runtime_cache( $key, $group ) {
+	public function get_from_internal_cache( $key, $group ) {
 		$derived_key = $this->build_key( $key, $group );
 
 		if ( isset( $this->cache[ $derived_key ] ) ) {
