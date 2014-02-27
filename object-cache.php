@@ -853,7 +853,12 @@ class WP_Object_Cache {
 		}
 
 		// Save to Redis
-		$result = $this->redis->setex( $derived_key, $value, $expiration );
+		$expiration = absint( $expiration );
+		if ( $expiration ) {
+			$result = $this->redis->setex( $derived_key, $this->prepare_value_for_redis( $value ), $expiration );
+		} else {
+			$result = $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) );
+		}
 
 		return $result;
 	}
@@ -924,14 +929,14 @@ class WP_Object_Cache {
 		$derived_key = $this->build_key( $key, $group );
 
 		if ( ! in_array( $group, $this->no_redis_groups ) ) {
-			$value = $this->redis->get( $derived_key );
+			$value = $this->redis->get( $this->restore_value_from_redis( $derived_key ) );
 		} else {
 			if ( isset( $this->cache[$derived_key] ) ) {
 				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
 			} elseif ( in_array( $group, $this->no_redis_groups ) ) {
 				return false;
 			} else {
-				$value = $this->redis->get( $derived_key );
+				$value = $this->redis->get( $this->restore_value_from_redis( $derived_key ) );
 			}
 		}
 
@@ -967,7 +972,12 @@ class WP_Object_Cache {
 		}
 
 		// Save to Redis
-		$result = $this->redis->setex( $derived_key, $value, absint( $expiration ) );
+		$expiration = absint( $expiration );
+		if ( $expiration ) {
+			$result = $this->redis->setex( $derived_key, $this->prepare_value_for_redis( $value ), $expiration );
+		} else {
+			$result = $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) );
+		}
 
 		$this->add_to_internal_cache( $derived_key, $value );
 
@@ -997,6 +1007,26 @@ class WP_Object_Cache {
 		}
 
 		return preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . "$prefix$group:$key" );
+	}
+
+	/**
+	 * Prepare a value for storage in Redis, which only accepts strings
+	 *
+	 * @param mixed $value
+	 * @return string
+	 */
+	protected function prepare_value_for_redis( $value ) {
+		$value = maybe_serialize( $value );
+	}
+
+	/**
+	 * Restore a value stored in Redis to its original data type
+	 *
+	 * @param string $value
+	 * @return mixed
+	 */
+	protected function restore_value_from_redis( $value ) {
+		$value = maybe_unserialize( $value );
 	}
 
 	/**
