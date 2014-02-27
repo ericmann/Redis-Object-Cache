@@ -908,6 +908,11 @@ class WP_Object_Cache {
 	 * @return  bool                Returns TRUE on success or FALSE on failure.
 	 */
 	public function flush( $delay = 0 ) {
+		$delay = absint( $delay );
+		if ( $delay ) {
+			sleep( $delay );
+		}
+
 		$result = $this->redis->flushall();
 
 		return $result;
