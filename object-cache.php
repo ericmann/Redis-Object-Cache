@@ -291,7 +291,7 @@ function wp_cache_get_by_key( $server_key, $key, $group = '', $cache_cb = null, 
  * @link http://www.php.net/manual/en/memcached.getdelayed.php
  *
  * @param string|array $keys       Array or string of key(s) to request.
- * @param string|array $groups     Array or string of group(s) for the key(s). See buildKeys for more on how these are handled.
+ * @param string|array $groups     Array or string of group(s) for the key(s). See build_keys for more on how these are handled.
  * @param bool         $with_cas   Whether to request CAS token values also.
  * @param null         $value_cb   The result callback or NULL.
  *
@@ -310,7 +310,7 @@ function wp_cache_get_delayed( $keys, $groups = '', $with_cas = false, $value_cb
  *
  * @param string       $server_key The key identifying the server to store the value on.
  * @param string|array $keys       Array or string of key(s) to request.
- * @param string|array $groups     Array or string of group(s) for the key(s). See buildKeys for more on how these are handled.
+ * @param string|array $groups     Array or string of group(s) for the key(s). See build_keys for more on how these are handled.
  * @param bool         $with_cas   Whether to request CAS token values also.
  * @param null         $value_cb   The result callback or NULL.
  *
@@ -325,7 +325,7 @@ function wp_cache_get_delayed_by_key( $server_key, $keys, $groups = '', $with_ca
 /**
  * Gets multiple values from memcached in one request.
  *
- * See the buildKeys method definition to understand the $keys/$groups parameters.
+ * See the build_keys method definition to understand the $keys/$groups parameters.
  *
  * @link http://www.php.net/manual/en/memcached.getmulti.php
  *
@@ -348,7 +348,7 @@ function wp_cache_get_multi( $keys, $groups = '', &$cas_tokens = null, $flags = 
 /**
  * Gets multiple values from memcached in one request by specified server key.
  *
- * See the buildKeys method definition to understand the $keys/$groups parameters.
+ * See the build_keys method definition to understand the $keys/$groups parameters.
  *
  * @link http://www.php.net/manual/en/memcached.getmultibykey.php
  *
@@ -640,7 +640,7 @@ function wp_cache_set_by_key( $server_key, $key, $value, $group = '', $expiratio
  * By sending an array of $items to this function, all values are saved at once to
  * memcached, reducing the need for multiple requests to memcached. The $items array
  * keys and values are what are stored to memcached. The keys in the $items array
- * are merged with the $groups array/string value via buildKeys to determine the
+ * are merged with the $groups array/string value via build_keys to determine the
  * final key for the object.
  *
  * @param array        $items      An array of key/value pairs to store on the server.
@@ -661,7 +661,7 @@ function wp_cache_set_multi( $items, $groups = '', $expiration = 0 ) {
  * By sending an array of $items to this function, all values are saved at once to
  * memcached, reducing the need for multiple requests to memcached. The $items array
  * keys and values are what are stored to memcached. The keys in the $items array
- * are merged with the $groups array/string value via buildKeys to determine the
+ * are merged with the $groups array/string value via build_keys to determine the
  * final key for the object.
  *
  * @param string       $server_key The key identifying the server to store the value on.
@@ -833,7 +833,7 @@ class WP_Object_Cache {
 	 * @return  bool                        Returns TRUE on success or FALSE on failure.
 	 */
 	public function add( $key, $value, $group = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
-		$derived_key = $this->buildKey( $key, $group );
+		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to runtime cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
@@ -877,7 +877,7 @@ class WP_Object_Cache {
 	 * @return  bool                    Returns TRUE on success or FALSE on failure.
 	 */
 	public function delete( $key, $group = 'default', $time = 0, $server_key = '', $byKey = false ) {
-		$derived_key = $this->buildKey( $key, $group );
+		$derived_key = $this->build_key( $key, $group );
 
 		// Remove from no_mc_groups array
 		if ( in_array( $group, $this->no_redis_groups ) ) {
@@ -921,7 +921,7 @@ class WP_Object_Cache {
 	 * @return  bool|mixed                  Cached object value.
 	 */
 	public function get( $key, $group = 'default', $server_key = '', $byKey = false ) {
-		$derived_key = $this->buildKey( $key, $group );
+		$derived_key = $this->build_key( $key, $group );
 
 		if ( ! in_array( $group, $this->no_redis_groups ) ) {
 			$value = $this->redis->get( $derived_key );
@@ -957,7 +957,7 @@ class WP_Object_Cache {
 	 * @return  bool                    Returns TRUE on success or FALSE on failure.
 	 */
 	public function set( $key, $value, $group = 'default', $expiration = 0, $server_key = '' ) {
-		$derived_key = $this->buildKey( $key, $group );
+		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to runtime cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) ) {
@@ -985,7 +985,7 @@ class WP_Object_Cache {
 	 *
 	 * @return  string
 	 */
-	public function buildKey( $key, $group = 'default' ) {
+	public function build_key( $key, $group = 'default' ) {
 		if ( empty( $group ) ) {
 			$group = 'default';
 		}
@@ -1018,7 +1018,7 @@ class WP_Object_Cache {
 	 * @return  bool|mixed              Value on success; false on failure.
 	 */
 	public function get_from_runtime_cache( $key, $group ) {
-		$derived_key = $this->buildKey( $key, $group );
+		$derived_key = $this->build_key( $key, $group );
 
 		if ( isset( $this->cache[ $derived_key ] ) ) {
 			return $this->cache[ $derived_key ];
