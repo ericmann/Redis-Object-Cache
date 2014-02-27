@@ -109,6 +109,17 @@ function wp_cache_incr( $key, $offset = 1, $group = '' ) {
 }
 
 /**
+ * Sets up Object Cache Global and assigns it.
+ *
+ * @global  WP_Object_Cache $wp_object_cache    WordPress Object Cache
+ * @return  void
+ */
+function wp_cache_init() {
+	global $wp_object_cache;
+	$wp_object_cache = new WP_Object_Cache();
+}
+
+/**
  * Replaces a value in cache.
  *
  * This method is similar to "add"; however, is does not successfully set a value if
@@ -146,15 +157,19 @@ function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
 }
 
 /**
- * Sets up Object Cache Global and assigns it.
+ * Switch the interal blog id.
  *
- * @global  WP_Object_Cache $wp_object_cache    WordPress Object Cache
- * @return  void
+ * This changes the blog id used to create keys in blog specific groups.
+ *
+ * @since 3.5.0
+ *
+ * @param int $blog_id Blog ID
  */
-function wp_cache_init() {
-	global $wp_object_cache;
-	$wp_object_cache = new WP_Object_Cache();
-}
+// function wp_cache_switch_to_blog( $blog_id ) {
+// 	global $wp_object_cache;
+
+// 	return $wp_object_cache->switch_to_blog( $blog_id );
+// }
 
 /**
  * Adds a group or set of groups to the list of Redis groups.
