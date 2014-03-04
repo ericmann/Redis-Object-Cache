@@ -15,8 +15,7 @@ A WordPress object cache backend that implements all available methods using Red
 
 ### Connecting to Redis ###
 
-By default, the plugin uses `127.0.0.1` and `6379` as the default host and port when creating a new client
-instance; the default database of `0` is also used by default. Three constants are provided to override these default values.
+By default, the plugin uses `127.0.0.1` and `6379` as the default host and port when creating a new client instance; the default database of `0` is also used. Three constants are provided to override these default values.
 
 Specify `WP_REDIS_BACKEND_HOST`, `WP_REDIS_BACKEND_PORT`, and `WP_REDIS_BACKEND_DB` to set the necessary, non-default connection values for your Redis instance.
 

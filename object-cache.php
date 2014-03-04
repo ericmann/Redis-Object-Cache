@@ -1,5 +1,11 @@
 <?php
 /**
+ * Plugin Name: Redis Object Cache
+ * Author: Eric Mann & Erick Hitter
+ * Version 1.0
+ */
+
+/**
  * Adds a value to cache.
  *
  * If the specified key already exists, the value is not stored and the function
