@@ -190,14 +190,21 @@ class WP_Object_Cache {
 	 *
 	 * @var Predis\Client
 	 */
-	public $redis;
+	private $redis;
+
+	/**
+	 * Track if Redis is available
+	 *
+	 * @var bool
+	 */
+	private $redis_connected = false;
 
 	/**
 	 * Holds the non-Redis objects.
 	 *
 	 * @var array
 	 */
-	public $cache = array();
+	private $cache = array();
 
 	/**
 	 * List of global groups.
@@ -269,18 +276,33 @@ class WP_Object_Cache {
 
 		// Use Redis PECL library if available, otherwise default to bundled Predis library
 		if ( class_exists( 'Redis' ) ) {
-			$this->redis = new Redis();
-			$this->redis->connect( $redis['host'], $redis['port'] );
+			try {
+				$this->redis = new Redis();
+				$this->redis->connect( $redis['host'], $redis['port'] );
 
-			if ( isset( $redis['database'] ) ) {
-				$this->redis->select( $redis['database'] );
+				if ( isset( $redis['database'] ) ) {
+					$this->redis->select( $redis['database'] );
+				}
+
+				$this->redis_connected = true;
+			} catch ( RedisException $e ) {
+				$this->redis_connected = false;
 			}
 		} else {
-			require_once 'predis/autoload.php';
-			$this->redis = new Predis\Client( $redis );
+			try {
+				require_once 'predis/autoload.php';
+				$this->redis = new Predis\Client( $redis );
+
+				$this->redis_connected = true;
+			} catch ( Predis\Connection\ConnectionException $e ) {
+				$this->redis_connected = false;
+			}
 		}
 
-		unset( $redis );
+		// When Redis is unavailable, fall back to the internal back by forcing all groups to be "no redis" groups
+		if ( ! $this->redis_connected ) {
+			$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $this->global_groups ) );
+		}
 
 		/**
 		 * This approach is borrowed from Sivel and Boren. Use the salt for easy cache invalidation and for
@@ -293,6 +315,15 @@ class WP_Object_Cache {
 		// Assign global and blog prefixes for use with keys
 		$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
 		$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
+	}
+
+	/**
+	 * Is Redis available?
+	 *
+	 * @return bool
+	 */
+	protected function can_redis() {
+		return $this->redis_connected;
 	}
 
 	/**
@@ -343,7 +374,7 @@ class WP_Object_Cache {
 		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to internal cache, not Redis
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 
 			// Check if conditions are right to continue
 			if (
@@ -387,12 +418,14 @@ class WP_Object_Cache {
 	public function delete( $key, $group = 'default' ) {
 		$derived_key = $this->build_key( $key, $group );
 
-		// Remove from no_mc_groups array
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		// Remove from no_redis_groups array
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 			if ( isset( $this->cache[$derived_key] ) ) {
 				unset( $this->cache[$derived_key] );
 
 				return true;
+			} else {
+				return false;
 			}
 		}
 
@@ -416,7 +449,10 @@ class WP_Object_Cache {
 		}
 
 		$this->cache = array();
-		$result = $this->parse_predis_response( $this->redis->flushdb() );
+
+		if ( $this->can_redis() ) {
+			$result = $this->parse_predis_response( $this->redis->flushdb() );
+		}
 
 		return $result;
 	}
@@ -433,7 +469,7 @@ class WP_Object_Cache {
 	public function get( $key, $group = 'default' ) {
 		$derived_key = $this->build_key( $key, $group );
 
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 			if ( isset( $this->cache[$derived_key] ) ) {
 				$this->cache_hits++;
 				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
@@ -471,7 +507,7 @@ class WP_Object_Cache {
 		$derived_key = $this->build_key( $key, $group );
 
 		// If group is a non-Redis group, save to internal cache, not Redis
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 			$this->add_to_internal_cache( $derived_key, $value );
 
 			return true;
@@ -501,7 +537,7 @@ class WP_Object_Cache {
 		$offset = (int) $offset;
 
 		// If group is a non-Redis group, save to internal cache, not Redis
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 			$value = $this->get_from_internal_cache( $derived_key );
 			$value += $offset;
 			$this->add_to_internal_cache( $derived_key, $value );
@@ -530,7 +566,7 @@ class WP_Object_Cache {
 		$offset = (int) $offset;
 
 		// If group is a non-Redis group, save to internal cache, not Redis
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 			$value = $this->get_from_internal_cache( $derived_key );
 			$value -= $offset;
 			$this->add_to_internal_cache( $derived_key, $value );
@@ -688,7 +724,11 @@ class WP_Object_Cache {
 	public function add_global_groups( $groups ) {
 		$groups = (array) $groups;
 
-		$this->global_groups = array_unique( array_merge( $this->global_groups, $groups ) );
+		if ( $this->can_redis() ) {
+			$this->global_groups = array_unique( array_merge( $this->global_groups, $groups ) );
+		} else {
+			$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
+		}
 	}
 
 	/**
