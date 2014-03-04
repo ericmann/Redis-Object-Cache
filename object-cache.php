@@ -378,8 +378,8 @@ class WP_Object_Cache {
 
 			// Check if conditions are right to continue
 			if (
-				( $add   &&   isset( $this->cache[$derived_key] ) ) ||
-				( ! $add && ! isset( $this->cache[$derived_key] ) )
+				( $add   &&   isset( $this->cache[ $derived_key ] ) ) ||
+				( ! $add && ! isset( $this->cache[ $derived_key ] ) )
 			) {
 				return false;
 			}
@@ -420,8 +420,8 @@ class WP_Object_Cache {
 
 		// Remove from no_redis_groups array
 		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
-			if ( isset( $this->cache[$derived_key] ) ) {
-				unset( $this->cache[$derived_key] );
+			if ( isset( $this->cache[ $derived_key ] ) ) {
+				unset( $this->cache[ $derived_key ] );
 
 				return true;
 			} else {
@@ -431,7 +431,7 @@ class WP_Object_Cache {
 
 		$result = $this->parse_predis_response( $this->redis->del( $derived_key ) );
 
-		unset( $this->cache[$derived_key] );
+		unset( $this->cache[ $derived_key ] );
 
 		return $result;
 	}
@@ -470,9 +470,9 @@ class WP_Object_Cache {
 		$derived_key = $this->build_key( $key, $group );
 
 		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
-			if ( isset( $this->cache[$derived_key] ) ) {
+			if ( isset( $this->cache[ $derived_key ] ) ) {
 				$this->cache_hits++;
-				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
+				return is_object( $this->cache[ $derived_key ] ) ? clone $this->cache[ $derived_key ] : $this->cache[ $derived_key ];
 			} else {
 				$this->cache_misses++;
 				return false;
@@ -680,7 +680,7 @@ class WP_Object_Cache {
 	 * @param   mixed  $value          Object value.
 	 */
 	public function add_to_internal_cache( $derived_key, $value ) {
-		$this->cache[$derived_key] = $value;
+		$this->cache[ $derived_key ] = $value;
 	}
 
 	/**
