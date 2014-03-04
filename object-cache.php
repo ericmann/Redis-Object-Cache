@@ -591,6 +591,7 @@ class WP_Object_Cache {
 		?><p>
 			<strong>Cache Hits:</strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
 			<strong>Cache Misses:</strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
+			<strong>Using Redis?</strong> <?php echo $this->can_redis() ? 'yes' : 'no'; ?><br />
 		</p>
 		<p>&nbsp;</p>
 		<p><strong>Caches Retrieved:</strong></p>
