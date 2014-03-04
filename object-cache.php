@@ -249,8 +249,9 @@ class WP_Object_Cache {
 	 * @param   null $persistent_id      To create an instance that persists between requests, use persistent_id to specify a unique ID for the instance.
 	 */
 	public function __construct() {
-		require_once 'predis/autoload.php';
+		global $blog_id, $table_prefix;
 
+		// General Redis settings
 		$redis = array(
 			'host' => '127.0.0.1',
 			'port' => 6379,
@@ -266,10 +267,20 @@ class WP_Object_Cache {
 			$redis['database'] = WP_REDIS_BACKEND_DB;
 		}
 
-		$this->redis = new Predis\Client( $redis );
-		unset( $redis );
+		// Use Redis PECL library if available, otherwise default to bundled Predis library
+		if ( class_exists( 'Redis' ) ) {
+			$this->redis = new Redis();
+			$this->redis->connect( $redis['host'], $redis['port'] );
 
-		global $blog_id, $table_prefix;
+			if ( isset( $redis['database'] ) ) {
+				$this->redis->select( $redis['database'] );
+			}
+		} else {
+			require_once 'predis/autoload.php';
+			$this->redis = new Predis\Client( $redis );
+		}
+
+		unset( $redis );
 
 		/**
 		 * This approach is borrowed from Sivel and Boren. Use the salt for easy cache invalidation and for
