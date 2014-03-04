@@ -589,16 +589,16 @@ class WP_Object_Cache {
 	 */
 	public function stats() {
 		?><p>
-			<strong>Cache Hits:</strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
-			<strong>Cache Misses:</strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
-			<strong>Using Redis?</strong> <?php echo $this->can_redis() ? 'yes' : 'no'; ?><br />
+			<strong><?php _e( 'Cache Hits:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
+			<strong><?php _e( 'Cache Misses:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
+			<strong><?php _e( 'Using Redis?', 'wordpress-redis-backend' ); ?></strong> <?php echo $this->can_redis() ? __( 'yes', 'wordpress-redis-backend' ) : __( 'no', 'wordpress-redis-backend' ); ?><br />
 		</p>
 		<p>&nbsp;</p>
-		<p><strong>Caches Retrieved:</strong></p>
+		<p><strong><?php _e( 'Caches Retrieved:', 'wordpress-redis-backend' ); ?></strong></p>
 		<ul>
-			<li><em>prefix:group:key - size in kilobytes</em></li>
+			<li><em><?php _e( 'prefix:group:key - size in kilobytes', 'wordpress-redis-backend' ); ?></em></li>
 		<?php foreach ( $this->cache as $group => $cache ) : ?>
-			<li><?php echo esc_html( $group ); ?> - <?php echo number_format_i18n( strlen( serialize( $cache ) ) / 1024, 2 ); ?> kb</li>
+			<li><?php printf( __( '%s - %s %s', 'wordpress-redis-backend' ), esc_html( $group ), number_format_i18n( strlen( serialize( $cache ) ) / 1024, 2 ), __( 'kb', 'wordpress-redis-backend' ) ); ?></li>
 		<?php endforeach; ?>
 		</ul><?php
 	}
