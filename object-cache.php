@@ -554,6 +554,9 @@ class WP_Object_Cache {
 				// Build an array of values looked up, keyed by the derived cache key
 				$group_cache = array_combine( $derived_keys, $group_cache );
 
+				// Restores cached data to its original data type
+				$group_cache = array_map( array( $this, 'restore_value_from_redis' ), $group_cache );
+
 				// Redis returns null for values not found in cache, but expected return value is false in this instance
 				$group_cache = array_map( array( $this, 'filter_redis_get_multi' ), $group_cache );
 
