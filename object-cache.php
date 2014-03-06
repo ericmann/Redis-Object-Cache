@@ -93,6 +93,23 @@ function wp_cache_get( $key, $group = '' ) {
 }
 
 /**
+ * Retrieve multiple values from cache.
+ *
+ * Gets multiple values from cache, including across multiple groups
+ *
+ * Usage: array( 'group0' => array( 'key0', 'key1', 'key2', ), 'group1' => array( 'key0' ) )
+ *
+ * Mirrors the Memcached Object Cache plugin's argument and return-value formats
+ *
+ * @param   array       $groups  Array of groups and keys to retrieve
+ * @return  bool|mixed           Array of cached values, keys in the format $group:$key. Non-existent keys false
+ */
+function wp_cache_get_multi( $groups ) {
+	global $wp_object_cache;
+	return $wp_object_cache->get_multi( $groups );
+}
+
+/**
  * Increment a numeric item's value.
  *
  * @param string $key    The key under which to store the value.
@@ -499,6 +516,65 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * Retrieve multiple values from cache.
+	 *
+	 * Gets multiple values from cache, including across multiple groups
+	 *
+	 * Usage: array( 'group0' => array( 'key0', 'key1', 'key2', ), 'group1' => array( 'key0' ) )
+	 *
+	 * Mirrors the Memcached Object Cache plugin's argument and return-value formats
+	 *
+	 * @param   array                           $groups  Array of groups and keys to retrieve
+	 * @uses    this::filter_redis_get_multi()
+	 * @return  bool|mixed                               Array of cached values, keys in the format $group:$key. Non-existent keys null.
+	 */
+	public function get_multi( $groups ) {
+		if ( empty( $groups ) || ! is_array( $groups ) ) {
+			return false;
+		}
+
+		// Retrieve requested caches and reformat results to mimic Memcached Object Cache's output
+		$cache = array();
+
+		foreach ( $groups as $group => $keys ) {
+			if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+				foreach ( $keys as $key ) {
+					$cache[ $this->build_key( $key, $group ) ] = $this->get( $key, $group );
+				}
+			} else {
+				// Reformat arguments as expected by Redis
+				$derived_keys = array();
+				foreach ( $keys as $key ) {
+					$derived_keys[] = $this->build_key( $key, $group );
+				}
+
+				// Retrieve from cache in a single request
+				$group_cache = $this->redis->mget( $derived_keys );
+
+				// Build an array of values looked up, keyed by the derived cache key
+				$group_cache = array_combine( $derived_keys, $group_cache );
+
+				// Redis returns null for values not found in cache, but expected return value is false in this instance
+				$group_cache = array_map( array( $this, 'filter_redis_get_multi' ), $group_cache );
+
+				$cache = array_merge( $cache, $group_cache );
+			}
+		}
+
+		// Add to the internal cache the found values from Redis
+		foreach ( $cache as $key => $value ) {
+			if ( $value ) {
+				$this->cache_hits++;
+				$this->add_to_internal_cache( $key, $value );
+			} else {
+				$this->cache_misses++;
+			}
+		}
+
+		return $cache;
+	}
+
+	/**
 	 * Sets a value in cache.
 	 *
 	 * The value is set whether or not this key already exists in Redis.
@@ -654,6 +730,23 @@ class WP_Object_Cache {
 	 */
 	protected function restore_value_from_redis( $value ) {
 		$value = maybe_unserialize( $value );
+
+		return $value;
+	}
+
+	/**
+	 * Convert data types when using Redis MGET
+	 *
+	 * When requesting multiple keys, those not found in cache are assigned the value null upon return.
+	 * Expected value in this case is false, so we convert
+	 *
+	 * @param   string  $value  Value to possibly convert
+	 * @return  string          Converted value
+	 */
+	protected function filter_redis_get_multi( $value ) {
+		if ( is_null( $value ) ) {
+			$value = false;
+		}
 
 		return $value;
 	}
