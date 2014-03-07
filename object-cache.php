@@ -1,5 +1,11 @@
 <?php
 /**
+ * Plugin Name: Redis Object Cache
+ * Author: Eric Mann & Erick Hitter
+ * Version 1.0
+ */
+
+/**
  * Adds a value to cache.
  *
  * If the specified key already exists, the value is not stored and the function
@@ -10,83 +16,11 @@
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
  *
- * @return bool                 Returns TRUE on success or FALSE on failure.
+ * @return bool              Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_add( $key, $value, $group = '', $expiration = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->add( $key, $value, $group, $expiration );
-}
-
-/**
- * Adds a value to cache on a specific server.
- *
- * Using a server_key value, the object can be stored on a specified server as opposed
- * to a random server in the stack. Note that this method will add the key/value to the
- * _cache object as part of the runtime cache. It will add it to an array for the
- * specified server_key.
- *
- * @param string $server_key     The key identifying the server to store the value on.
- * @param string $key            The key under which to store the value.
- * @param mixed  $value          The value to store.
- * @param string $group          The group value appended to the $key.
- * @param int    $expiration     The expiration time, defaults to 0.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_add_by_key( $server_key, $key, $value, $group = '', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->addByKey( $server_key, $key, $value, $group, $expiration );
-}
-
-/**
- * Append data to an existing item.
- *
- * This method should throw an error if it is used with compressed data. This
- * is an expected behavior. Memcached casts the value to be appended to the initial value to the
- * type of the initial value. Be careful as this leads to unexpected behavior at times. Due to
- * how memcached treats types, the behavior has been mimicked in the internal cache to produce
- * similar results and improve consistency. It is recommend that appends only occur with data of
- * the same type.
- *
- * @link http://www.php.net/manual/en/memcached.append.php
- *
- * @param string $key    The key under which to store the value.
- * @param mixed  $value  Must be string as appending mixed values is not well-defined
- * @param string $group  The group value appended to the $key.
- *
- * @return bool             Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_append( $key, $value, $group = '' ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->append( $key, $value, $group );
-}
-
-/**
- * Append data to an existing item by server key.
- *
- * This method should throw an error if it is used with compressed data. This
- * is an expected behavior. Memcached casts the value to be appended to the initial value to the
- * type of the initial value. Be careful as this leads to unexpected behavior at times. Due to
- * how memcached treats types, the behavior has been mimicked in the internal cache to produce
- * similar results and improve consistency. It is recommend that appends only occur with data of
- * the same type.
- *
- * @link http://www.php.net/manual/en/memcached.appendbykey.php
- *
- * @param string $server_key     The key identifying the server to store the value on.
- * @param string $key            The key under which to store the value.
- * @param mixed  $value          Must be string as appending mixed values is not well-defined
- * @param string $group          The group value appended to the $key.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_append_by_key( $server_key, $key, $value, $group = '' ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->appendByKey( $server_key, $key, $value, $group );
 }
 
 /**
@@ -97,8 +31,6 @@ function wp_cache_append_by_key( $server_key, $key, $value, $group = '' ) {
  * does not mean that plugins can't implement this function when they need to
  * make sure that the cache is cleaned up after WordPress no longer needs it.
  *
- * @since 2.0.0
- *
  * @return  bool    Always returns True
  */
 function wp_cache_close() {
@@ -108,105 +40,29 @@ function wp_cache_close() {
 /**
  * Decrement a numeric item's value.
  *
- * @link http://www.php.net/manual/en/memcached.decrement.php
- *
  * @param string $key    The key under which to store the value.
  * @param int    $offset The amount by which to decrement the item's value.
  * @param string $group  The group value appended to the $key.
  *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
- */
-function wp_cache_decrement( $key, $offset = 1, $group = '' ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->decrement( $key, $offset, $group );
-}
-
-/**
- * Decrement a numeric item's value.
- *
- * Same as wp_cache_decrement. Original WordPress caching backends use wp_cache_decr. I
- * want both spellings to work.
- *
- * @link http://www.php.net/manual/en/memcached.decrement.php
- *
- * @param string $key    The key under which to store the value.
- * @param int    $offset The amount by which to decrement the item's value.
- * @param string $group  The group value appended to the $key.
- *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
+ * @return int|bool      Returns item's new value on success or FALSE on failure.
  */
 function wp_cache_decr( $key, $offset = 1, $group = '' ) {
-	return wp_cache_decrement( $key, $offset, $group );
+	global $wp_object_cache;
+	return $wp_object_cache->decrement( $key, $offset, $group );
 }
 
 /**
  * Remove the item from the cache.
  *
- * Remove an item from memcached with identified by $key after $time seconds. The
- * $time parameter allows an object to be queued for deletion without immediately
- * deleting. Between the time that it is queued and the time it's deleted, add,
- * replace, and get will fail, but set will succeed.
- *
- * @link http://www.php.net/manual/en/memcached.delete.php
- *
  * @param string $key    The key under which to store the value.
  * @param string $group  The group value appended to the $key.
  * @param int    $time   The amount of time the server will wait to delete the item in seconds.
  *
- * @return bool             Returns TRUE on success or FALSE on failure.
+ * @return bool           Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_delete( $key, $group = '', $time = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->delete( $key, $group, $time );
-}
-
-/**
- * Remove the item from the cache by server key.
- *
- * Remove an item from memcached with identified by $key after $time seconds. The
- * $time parameter allows an object to be queued for deletion without immediately
- * deleting. Between the time that it is queued and the time it's deleted, add,
- * replace, and get will fail, but set will succeed.
- *
- * @link http://www.php.net/manual/en/memcached.deletebykey.php
- *
- * @param string $server_key The key identifying the server to store the value on.
- * @param string $key        The key under which to store the value.
- * @param string $group      The group value appended to the $key.
- * @param int    $time       The amount of time the server will wait to delete the item in seconds.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_delete_by_key( $server_key, $key, $group = '', $time = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->deleteByKey( $server_key, $key, $group, $time );
-}
-
-/**
- * Fetch the next result.
- *
- * @link http://www.php.net/manual/en/memcached.fetch.php
- *
- * @return  array|bool   Returns the next result or FALSE otherwise.
- */
-function wp_cache_fetch() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->fetch();
-}
-
-/**
- * Fetch all remaining results from the last request.
- *
- * @return  array|bool  Returns the results or FALSE on failure.
- */
-function wp_cache_fetch_all() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->fetchAll();
 }
 
 /**
@@ -218,479 +74,53 @@ function wp_cache_fetch_all() {
  */
 function wp_cache_flush( $delay = 0 ) {
 	global $wp_object_cache;
-
 	return $wp_object_cache->flush( $delay );
 }
 
 /**
  * Retrieve object from cache.
  *
- * Gets an object from cache based on $key and $group. In order to fully support the $cache_cb and $cas_token
- * parameters, the runtime cache is ignored by this function if either of those values are set. If either of
- * those values are set, the request is made directly to the memcached server for proper handling of the
- * callback and/or token.
- *
- * Note that the $deprecated and $found args are only here for compatibility with the native wp_cache_get function.
- *
- * @link http://www.php.net/manual/en/memcached.get.php
+ * Gets an object from cache based on $key and $group.
  *
  * @param string      $key        The key under which to store the value.
  * @param string      $group      The group value appended to the $key.
- * @param null|string $cache_cb   Read-through caching callback.
- * @param null|float  $cas_token  The variable to store the CAS token in.
  *
- * @return bool|mixed               Cached object value.
+ * @return bool|mixed             Cached object value.
  */
-function wp_cache_get( $key, $group = '', $cache_cb = null, &$cas_token = null ) {
+function wp_cache_get( $key, $group = '' ) {
 	global $wp_object_cache;
-
-	/**
-	 * Handles situations where the $force argument for the wp_cache_get function in core may be used. It is only
-	 * used once in all of WP Core and since the function does not do anything with it, it is pointless to support.
-	 * I'm catching the issue here to avoid conflicts.
-	 */
-	if ( true === $cache_cb )
-		$cache_cb = null;
-
-	if ( func_num_args() > 2 )
-		return $wp_object_cache->get( $key, $group, '', false, $cache_cb, $cas_token );
-	else
-		return $wp_object_cache->get( $key, $group );
+	return $wp_object_cache->get( $key, $group );
 }
 
 /**
- * Retrieve object from cache from specified server.
+ * Retrieve multiple values from cache.
  *
- * Gets an object from cache based on $key, $group and $server_key. In order to fully support the $cache_cb and $cas_token
- * parameters, the runtime cache is ignored by this function if either of those values are set. If either of
- * those values are set, the request is made directly to the memcached server for proper handling of the
- * callback and/or token.
+ * Gets multiple values from cache, including across multiple groups
  *
- * @link http://www.php.net/manual/en/memcached.getbykey.php
+ * Usage: array( 'group0' => array( 'key0', 'key1', 'key2', ), 'group1' => array( 'key0' ) )
  *
- * @param string      $server_key The key identifying the server to store the value on.
- * @param string      $key        The key under which to store the value.
- * @param string      $group      The group value appended to the $key.
- * @param null|string $cache_cb   Read-through caching callback.
- * @param null|float  $cas_token  The variable to store the CAS token in.
+ * Mirrors the Memcached Object Cache plugin's argument and return-value formats
  *
- * @return bool|mixed               Cached object value.
+ * @param   array       $groups  Array of groups and keys to retrieve
+ * @return  bool|mixed           Array of cached values, keys in the format $group:$key. Non-existent keys false
  */
-function wp_cache_get_by_key( $server_key, $key, $group = '', $cache_cb = null, &$cas_token = null ) {
+function wp_cache_get_multi( $groups ) {
 	global $wp_object_cache;
-
-	if ( func_num_args() > 3 )
-		return $wp_object_cache->getByKey( $server_key, $key, $group, $cache_cb, $cas_token );
-	else
-		return $wp_object_cache->getByKey( $server_key, $key, $group );
-}
-
-/**
- * Request multiple keys without blocking.
- *
- * @link http://www.php.net/manual/en/memcached.getdelayed.php
- *
- * @param string|array $keys       Array or string of key(s) to request.
- * @param string|array $groups     Array or string of group(s) for the key(s). See buildKeys for more on how these are handled.
- * @param bool         $with_cas   Whether to request CAS token values also.
- * @param null         $value_cb   The result callback or NULL.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_get_delayed( $keys, $groups = '', $with_cas = false, $value_cb = null ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getDelayed( $keys, $groups, $with_cas, $value_cb );
-}
-
-/**
- * Request multiple keys without blocking from a specified server.
- *
- * @link http://www.php.net/manual/en/memcached.getdelayed.php
- *
- * @param string       $server_key The key identifying the server to store the value on.
- * @param string|array $keys       Array or string of key(s) to request.
- * @param string|array $groups     Array or string of group(s) for the key(s). See buildKeys for more on how these are handled.
- * @param bool         $with_cas   Whether to request CAS token values also.
- * @param null         $value_cb   The result callback or NULL.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_get_delayed_by_key( $server_key, $keys, $groups = '', $with_cas = false, $value_cb = null ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getDelayedByKey( $server_key, $keys, $groups, $with_cas, $value_cb );
-}
-
-/**
- * Gets multiple values from memcached in one request.
- *
- * See the buildKeys method definition to understand the $keys/$groups parameters.
- *
- * @link http://www.php.net/manual/en/memcached.getmulti.php
- *
- * @param array        $keys       Array of keys to retrieve.
- * @param string|array $groups     If string, used for all keys. If arrays, corresponds with the $keys array.
- * @param null|array   $cas_tokens The variable to store the CAS tokens for the found items.
- * @param int          $flags      The flags for the get operation.
- *
- * @return bool|array               Returns the array of found items or FALSE on failure.
- */
-function wp_cache_get_multi( $keys, $groups = '', &$cas_tokens = null, $flags = null ) {
-	global $wp_object_cache;
-
-	if ( func_num_args() > 2 )
-		return $wp_object_cache->getMulti( $keys, $groups, '', $cas_tokens, $flags );
-	else
-		return $wp_object_cache->getMulti( $keys, $groups );
-}
-
-/**
- * Gets multiple values from memcached in one request by specified server key.
- *
- * See the buildKeys method definition to understand the $keys/$groups parameters.
- *
- * @link http://www.php.net/manual/en/memcached.getmultibykey.php
- *
- * @param string       $server_key The key identifying the server to store the value on.
- * @param array        $keys       Array of keys to retrieve.
- * @param string|array $groups     If string, used for all keys. If arrays, corresponds with the $keys array.
- * @param null|array   $cas_tokens The variable to store the CAS tokens for the found items.
- * @param int          $flags      The flags for the get operation.
- *
- * @return bool|array               Returns the array of found items or FALSE on failure.
- */
-function wp_cache_get_multi_by_key( $server_key, $keys, $groups = '', &$cas_tokens = null, $flags = null ) {
-	global $wp_object_cache;
-
-	if ( func_num_args() > 3 )
-		return $wp_object_cache->getMultiByKey( $server_key, $keys, $groups, $cas_tokens, $flags );
-	else
-		return $wp_object_cache->getMultiByKey( $server_key, $keys, $groups );
-}
-
-/**
- * Retrieve a Memcached option value.
- *
- * @link http://www.php.net/manual/en/memcached.getoption.php
- *
- * @param int $option One of the Memcached::OPT_* constants.
- *
- * @return mixed        Returns the value of the requested option, or FALSE on error.
- */
-function wp_cache_get_option( $option ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getOption( $option );
-}
-
-/**
- * Return the result code of the last option.
- *
- * @link http://www.php.net/manual/en/memcached.getresultcode.php
- *
- * @return int  Result code of the last Memcached operation.
- */
-function wp_cache_get_result_code() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getResultCode();
-}
-
-/**
- * Return the message describing the result of the last operation.
- *
- * @link http://www.php.net/manual/en/memcached.getresultmessage.php
- *
- * @return string   Message describing the result of the last Memcached operation.
- */
-function wp_cache_get_result_message() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getResultMessage();
-}
-
-/**
- * Get server information by key.
- *
- * @link http://www.php.net/manual/en/memcached.getserverbykey.php
- *
- * @param string $server_key The key identifying the server to store the value on.
- *
- * @return array                Array with host, post, and weight on success, FALSE on failure.
- */
-function wp_cache_get_server_by_key( $server_key ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getServerByKey( $server_key );
-}
-
-/**
- * Get the list of servers in the pool.
- *
- * @link http://www.php.net/manual/en/memcached.getserverlist.php
- *
- * @return array    The list of all servers in the server pool.
- */
-function wp_cache_get_server_list() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getServerList();
-}
-
-/**
- * Get server pool statistics.
- *
- * @link http://www.php.net/manual/en/memcached.getstats.php
- *
- * @return array    Array of server statistics, one entry per server.
- */
-function wp_cache_get_stats() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getStats();
-}
-
-/**
- * Get server pool memcached version information.
- *
- * @link http://www.php.net/manual/en/memcached.getversion.php
- *
- * @return array    Array of server versions, one entry per server.
- */
-function wp_cache_get_version() {
-	global $wp_object_cache;
-
-	return $wp_object_cache->getVersion();
+	return $wp_object_cache->get_multi( $groups );
 }
 
 /**
  * Increment a numeric item's value.
  *
- * @link http://www.php.net/manual/en/memcached.increment.php
- *
  * @param string $key    The key under which to store the value.
  * @param int    $offset The amount by which to increment the item's value.
  * @param string $group  The group value appended to the $key.
  *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
- */
-function wp_cache_increment( $key, $offset = 1, $group = '' ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->increment( $key, $offset, $group );
-}
-
-/**
- * Increment a numeric item's value.
- *
- * This is the same as wp_cache_increment, but kept for back compatibility. The original
- * WordPress caching backends use wp_cache_incr. I want both to work.
- *
- * @link http://www.php.net/manual/en/memcached.increment.php
- *
- * @param string $key    The key under which to store the value.
- * @param int    $offset The amount by which to increment the item's value.
- * @param string $group  The group value appended to the $key.
- *
- * @return int|bool         Returns item's new value on success or FALSE on failure.
+ * @return int|bool      Returns item's new value on success or FALSE on failure.
  */
 function wp_cache_incr( $key, $offset = 1, $group = '' ) {
-	return wp_cache_increment( $key, $offset, $group );
-}
-
-/**
- * Prepend data to an existing item.
- *
- * This method should throw an error if it is used with compressed data. This is an expected behavior.
- * Memcached casts the value to be prepended to the initial value to the type of the initial value. Be
- * careful as this leads to unexpected behavior at times. For instance, prepending (float) 45.23 to
- * (int) 23 will result in 45, because the value is first combined (45.2323) then cast to "integer"
- * (the original value), which will be (int) 45. Due to how memcached treats types, the behavior has been
- * mimicked in the internal cache to produce similar results and improve consistency. It is recommend
- * that prepends only occur with data of the same type.
- *
- * @link http://www.php.net/manual/en/memcached.prepend.php
- *
- * @param string $key    The key under which to store the value.
- * @param string $value  Must be string as prepending mixed values is not well-defined.
- * @param string $group  The group value prepended to the $key.
- *
- * @return bool             Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_prepend( $key, $value, $group = '' ) {
 	global $wp_object_cache;
-
-	return $wp_object_cache->prepend( $key, $value, $group );
-}
-
-/**
- * Append data to an existing item by server key.
- *
- * This method should throw an error if it is used with compressed data. This is an expected behavior.
- * Memcached casts the value to be prepended to the initial value to the type of the initial value. Be
- * careful as this leads to unexpected behavior at times. For instance, prepending (float) 45.23 to
- * (int) 23 will result in 45, because the value is first combined (45.2323) then cast to "integer"
- * (the original value), which will be (int) 45. Due to how memcached treats types, the behavior has been
- * mimicked in the internal cache to produce similar results and improve consistency. It is recommend
- * that prepends only occur with data of the same type.
- *
- * @link http://www.php.net/manual/en/memcached.prependbykey.php
- *
- * @param string $server_key     The key identifying the server to store the value on.
- * @param string $key            The key under which to store the value.
- * @param string $value          Must be string as prepending mixed values is not well-defined.
- * @param string $group          The group value prepended to the $key.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_prepend_by_key( $server_key, $key, $value, $group = '' ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->prependByKey( $server_key, $key, $value, $group );
-}
-
-/**
- * Replaces a value in cache.
- *
- * This method is similar to "add"; however, is does not successfully set a value if
- * the object's key is not already set in cache.
- *
- * @link http://www.php.net/manual/en/memcached.replace.php
- *
- * @param string $key        The key under which to store the value.
- * @param mixed  $value      The value to store.
- * @param string $group      The group value appended to the $key.
- * @param int    $expiration The expiration time, defaults to 0.
- *
- * @return bool                 Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->replace( $key, $value, $group, $expiration );
-}
-
-/**
- * Replaces a value in cache on a specific server.
- *
- * This method is similar to "addByKey"; however, is does not successfully set a value if
- * the object's key is not already set in cache.
- *
- * @link http://www.php.net/manual/en/memcached.addbykey.php
- *
- * @param string $server_key     The key identifying the server to store the value on.
- * @param string $key            The key under which to store the value.
- * @param mixed  $value          The value to store.
- * @param string $group          The group value appended to the $key.
- * @param int    $expiration     The expiration time, defaults to 0.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_replace_by_key( $server_key, $key, $value, $group = '', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->replaceByKey( $server_key, $key, $value, $group, $expiration );
-}
-
-/**
- * Sets a value in cache.
- *
- * The value is set whether or not this key already exists in memcached.
- *
- * @link http://www.php.net/manual/en/memcached.set.php
- *
- * @param string $key        The key under which to store the value.
- * @param mixed  $value      The value to store.
- * @param string $group      The group value appended to the $key.
- * @param int    $expiration The expiration time, defaults to 0.
- *
- * @return bool                 Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->set( $key, $value, $group, $expiration );
-}
-
-/**
- * Sets a value in cache.
- *
- * The value is set whether or not this key already exists in memcached.
- *
- * @link http://www.php.net/manual/en/memcached.set.php
- *
- * @param string $server_key     The key identifying the server to store the value on.
- * @param string $key            The key under which to store the value.
- * @param mixed  $value          The value to store.
- * @param string $group          The group value appended to the $key.
- * @param int    $expiration     The expiration time, defaults to 0.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_set_by_key( $server_key, $key, $value, $group = '', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->setByKey( $server_key, $key, $value, $group, $expiration );
-}
-
-/**
- * Set multiple values to cache at once.
- *
- * By sending an array of $items to this function, all values are saved at once to
- * memcached, reducing the need for multiple requests to memcached. The $items array
- * keys and values are what are stored to memcached. The keys in the $items array
- * are merged with the $groups array/string value via buildKeys to determine the
- * final key for the object.
- *
- * @param array        $items      An array of key/value pairs to store on the server.
- * @param string|array $groups     Group(s) to merge with key(s) in $items.
- * @param int          $expiration The expiration time, defaults to 0.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_set_multi( $items, $groups = '', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->setMulti( $items, $groups, $expiration );
-}
-
-/**
- * Set multiple values to cache at once on specified server.
- *
- * By sending an array of $items to this function, all values are saved at once to
- * memcached, reducing the need for multiple requests to memcached. The $items array
- * keys and values are what are stored to memcached. The keys in the $items array
- * are merged with the $groups array/string value via buildKeys to determine the
- * final key for the object.
- *
- * @param string       $server_key The key identifying the server to store the value on.
- * @param array        $items      An array of key/value pairs to store on the server.
- * @param string|array $groups     Group(s) to merge with key(s) in $items.
- * @param int          $expiration The expiration time, defaults to 0.
- *
- * @return bool                     Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_set_multi_by_key( $server_key, $items, $groups = 'default', $expiration = 0 ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->setMultiByKey( $server_key, $items, $groups, $expiration );
-}
-
-/**
- * Set a Memcached option.
- *
- * @link http://www.php.net/manual/en/memcached.setoption.php
- *
- * @param int   $option Option name.
- * @param mixed $value  Option value.
- *
- * @return bool             Returns TRUE on success or FALSE on failure.
- */
-function wp_cache_set_option( $option, $value ) {
-	global $wp_object_cache;
-
-	return $wp_object_cache->setOption( $option, $value );
+	return $wp_object_cache->increment( $key, $offset, $group );
 }
 
 /**
@@ -705,7 +135,55 @@ function wp_cache_init() {
 }
 
 /**
- * Adds a group or set of groups to the list of non-persistent groups.
+ * Replaces a value in cache.
+ *
+ * This method is similar to "add"; however, is does not successfully set a value if
+ * the object's key is not already set in cache.
+ *
+ * @param string $key        The key under which to store the value.
+ * @param mixed  $value      The value to store.
+ * @param string $group      The group value appended to the $key.
+ * @param int    $expiration The expiration time, defaults to 0.
+ *
+ * @return bool              Returns TRUE on success or FALSE on failure.
+ */
+function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
+	global $wp_object_cache;
+	return $wp_object_cache->replace( $key, $value, $group, $expiration );
+}
+
+/**
+ * Sets a value in cache.
+ *
+ * The value is set whether or not this key already exists in Redis.
+ *
+ * @param string $key        The key under which to store the value.
+ * @param mixed  $value      The value to store.
+ * @param string $group      The group value appended to the $key.
+ * @param int    $expiration The expiration time, defaults to 0.
+ *
+ * @return bool              Returns TRUE on success or FALSE on failure.
+ */
+function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
+	global $wp_object_cache;
+	return $wp_object_cache->set( $key, $value, $group, $expiration );
+}
+
+/**
+ * Switch the interal blog id.
+ *
+ * This changes the blog id used to create keys in blog specific groups.
+ *
+ * @param  int $_blog_id Blog ID
+ * @return bool
+ */
+function wp_cache_switch_to_blog( $_blog_id ) {
+	global $wp_object_cache;
+	return $wp_object_cache->switch_to_blog( $_blog_id );
+}
+
+/**
+ * Adds a group or set of groups to the list of Redis groups.
  *
  * @param   string|array $groups     A group or an array of groups to add.
  *
@@ -717,7 +195,7 @@ function wp_cache_add_global_groups( $groups ) {
 }
 
 /**
- * Adds a group or set of groups to the list of non-Memcached groups.
+ * Adds a group or set of groups to the list of non-Redis groups.
  *
  * @param   string|array $groups     A group or an array of groups to add.
  *
@@ -735,14 +213,21 @@ class WP_Object_Cache {
 	 *
 	 * @var Predis\Client
 	 */
-	public $redis;
+	private $redis;
+
+	/**
+	 * Track if Redis is available
+	 *
+	 * @var bool
+	 */
+	private $redis_connected = false;
 
 	/**
 	 * Holds the non-Redis objects.
 	 *
 	 * @var array
 	 */
-	public $cache = array();
+	private $cache = array();
 
 	/**
 	 * List of global groups.
@@ -773,6 +258,20 @@ class WP_Object_Cache {
 	public $blog_prefix = '';
 
 	/**
+	 * Track how many requests were found in cache
+	 *
+	 * @var int
+	 */
+	public $cache_hits = 0;
+
+	/**
+	 * Track how may requests were not cached
+	 *
+	 * @var int
+	 */
+	public $cache_misses = 0;
+
+	/**
 	 * Instantiate the Redis class.
 	 *
 	 * Instantiates the Redis class.
@@ -780,11 +279,53 @@ class WP_Object_Cache {
 	 * @param   null $persistent_id      To create an instance that persists between requests, use persistent_id to specify a unique ID for the instance.
 	 */
 	public function __construct() {
-		require_once 'predis/autoload.php';
-
-		$this->redis = new Predis\Client( '' );
-
 		global $blog_id, $table_prefix;
+
+		// General Redis settings
+		$redis = array(
+			'host' => '127.0.0.1',
+			'port' => 6379,
+		);
+
+		if ( defined( 'WP_REDIS_BACKEND_HOST' ) && WP_REDIS_BACKEND_HOST ) {
+			$redis['host'] = WP_REDIS_BACKEND_HOST;
+		}
+		if ( defined( 'WP_REDIS_BACKEND_PORT' ) && WP_REDIS_BACKEND_PORT ) {
+			$redis['port'] = WP_REDIS_BACKEND_PORT;
+		}
+		if ( defined( 'WP_REDIS_BACKEND_DB' ) && WP_REDIS_BACKEND_DB ) {
+			$redis['database'] = WP_REDIS_BACKEND_DB;
+		}
+
+		// Use Redis PECL library if available, otherwise default to bundled Predis library
+		if ( class_exists( 'Redis' ) ) {
+			try {
+				$this->redis = new Redis();
+				$this->redis->connect( $redis['host'], $redis['port'] );
+
+				if ( isset( $redis['database'] ) ) {
+					$this->redis->select( $redis['database'] );
+				}
+
+				$this->redis_connected = true;
+			} catch ( RedisException $e ) {
+				$this->redis_connected = false;
+			}
+		} else {
+			try {
+				require_once 'predis/autoload.php';
+				$this->redis = new Predis\Client( $redis );
+
+				$this->redis_connected = true;
+			} catch ( Predis\Connection\ConnectionException $e ) {
+				$this->redis_connected = false;
+			}
+		}
+
+		// When Redis is unavailable, fall back to the internal back by forcing all groups to be "no redis" groups
+		if ( ! $this->redis_connected ) {
+			$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $this->global_groups ) );
+		}
 
 		/**
 		 * This approach is borrowed from Sivel and Boren. Use the salt for easy cache invalidation and for
@@ -795,10 +336,17 @@ class WP_Object_Cache {
 		}
 
 		// Assign global and blog prefixes for use with keys
-		if ( function_exists( 'is_multisite' ) ) {
-			$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
-			$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
-		}
+		$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
+		$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
+	}
+
+	/**
+	 * Is Redis available?
+	 *
+	 * @return bool
+	 */
+	protected function can_redis() {
+		return $this->redis_connected;
 	}
 
 	/**
@@ -811,19 +359,51 @@ class WP_Object_Cache {
 	 * @param   mixed  $value          The value to store.
 	 * @param   string $group          The group value appended to the $key.
 	 * @param   int    $expiration     The expiration time, defaults to 0.
-	 * @param   string $server_key     The key identifying the server to store the value on.
-	 * @param   bool   $byKey          True to store in internal cache by key; false to not store by key
-	 *
-	 * @return  bool                        Returns TRUE on success or FALSE on failure.
+	 * @return  bool                   Returns TRUE on success or FALSE on failure.
 	 */
-	public function add( $key, $value, $group = 'default', $expiration = 0, $server_key = '', $byKey = false ) {
-		$derived_key = $this->buildKey( $key, $group );
+	public function add( $key, $value, $group = 'default', $expiration = 0 ) {
+		return $this->add_or_replace( true, $key, $value, $group, $expiration );
+	}
 
-		// If group is a non-Redis group, save to runtime cache, not Redis
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+	/**
+	 * Replace a value in the cache.
+	 *
+	 * If the specified key doesn't exist, the value is not stored and the function
+	 * returns false.
+	 *
+	 * @param   string $key            The key under which to store the value.
+	 * @param   mixed  $value          The value to store.
+	 * @param   string $group          The group value appended to the $key.
+	 * @param   int    $expiration     The expiration time, defaults to 0.
+	 * @return  bool                   Returns TRUE on success or FALSE on failure.
+	 */
+	public function replace( $key, $value, $group = 'default', $expiration = 0 ) {
+		return $this->add_or_replace( false, $key, $value, $group, $expiration );
+	}
 
-			// Add does not set the value if the key exists; mimic that here
-			if ( isset( $this->cache[$derived_key] ) ) {
+	/**
+	 * Add or replace a value in the cache.
+	 *
+	 * Add does not set the value if the key exists; replace does not replace if the value doesn't exist.
+	 *
+	 * @param   bool   $add            True if should only add if value doesn't exist, false to only add when value already exists
+	 * @param   string $key            The key under which to store the value.
+	 * @param   mixed  $value          The value to store.
+	 * @param   string $group          The group value appended to the $key.
+	 * @param   int    $expiration     The expiration time, defaults to 0.
+	 * @return  bool                   Returns TRUE on success or FALSE on failure.
+	 */
+	protected function add_or_replace( $add, $key, $value, $group = 'default', $expiration = 0 ) {
+		$derived_key = $this->build_key( $key, $group );
+
+		// If group is a non-Redis group, save to internal cache, not Redis
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+
+			// Check if conditions are right to continue
+			if (
+				( $add   &&   isset( $this->cache[ $derived_key ] ) ) ||
+				( ! $add && ! isset( $this->cache[ $derived_key ] ) )
+			) {
 				return false;
 			}
 
@@ -832,12 +412,21 @@ class WP_Object_Cache {
 			return true;
 		}
 
-		if ( $this->redis->exists( $derived_key ) ) {
+		// Check if conditions are right to continue
+		if (
+			( $add   &&   $this->redis->exists( $derived_key ) ) ||
+			( ! $add && ! $this->redis->exists( $derived_key ) )
+		) {
 			return false;
 		}
 
 		// Save to Redis
-		$result = $this->redis->setex( $derived_key, $value, $expiration );
+		$expiration = absint( $expiration );
+		if ( $expiration ) {
+			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
+		} else {
+			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) ) );
+		}
 
 		return $result;
 	}
@@ -845,36 +434,27 @@ class WP_Object_Cache {
 	/**
 	 * Remove the item from the cache.
 	 *
-	 * Remove an item from memcached with identified by $key after $time seconds. The
-	 * $time parameter allows an object to be queued for deletion without immediately
-	 * deleting. Between the time that it is queued and the time it's deleted, add,
-	 * replace, and get will fail, but set will succeed.
-	 *
-	 * @link http://www.php.net/manual/en/memcached.delete.php
-	 *
 	 * @param   string $key        The key under which to store the value.
 	 * @param   string $group      The group value appended to the $key.
-	 * @param   int    $time       The amount of time the server will wait to delete the item in seconds.
-	 * @param   string $server_key The key identifying the server to store the value on.
-	 * @param   bool   $byKey      True to store in internal cache by key; false to not store by key
-	 *
-	 * @return  bool                    Returns TRUE on success or FALSE on failure.
+	 * @return  bool               Returns TRUE on success or FALSE on failure.
 	 */
-	public function delete( $key, $group = 'default', $time = 0, $server_key = '', $byKey = false ) {
-		$derived_key = $this->buildKey( $key, $group );
+	public function delete( $key, $group = 'default' ) {
+		$derived_key = $this->build_key( $key, $group );
 
-		// Remove from no_mc_groups array
-		if ( in_array( $group, $this->no_redis_groups ) ) {
-			if ( isset( $this->cache[$derived_key] ) ) {
-				unset( $this->cache[$derived_key] );
+		// Remove from no_redis_groups array
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+			if ( isset( $this->cache[ $derived_key ] ) ) {
+				unset( $this->cache[ $derived_key ] );
+
+				return true;
+			} else {
+				return false;
 			}
-
-			return true;
 		}
 
-		$result = $this->redis->del( $derived_key );
+		$result = $this->parse_predis_response( $this->redis->del( $derived_key ) );
 
-		unset( $this->cache[$derived_key] );
+		unset( $this->cache[ $derived_key ] );
 
 		return $result;
 	}
@@ -883,11 +463,19 @@ class WP_Object_Cache {
 	 * Invalidate all items in the cache.
 	 *
 	 * @param   int $delay      Number of seconds to wait before invalidating the items.
-	 *
-	 * @return  bool                Returns TRUE on success or FALSE on failure.
+	 * @return  bool            Returns TRUE on success or FALSE on failure.
 	 */
 	public function flush( $delay = 0 ) {
-		$result = $this->redis->flushall();
+		$delay = absint( $delay );
+		if ( $delay ) {
+			sleep( $delay );
+		}
+
+		$this->cache = array();
+
+		if ( $this->can_redis() ) {
+			$result = $this->parse_predis_response( $this->redis->flushdb() );
+		}
 
 		return $result;
 	}
@@ -899,24 +487,27 @@ class WP_Object_Cache {
 	 *
 	 * @param   string        $key        The key under which to store the value.
 	 * @param   string        $group      The group value appended to the $key.
-	 * @param   string        $server_key The key identifying the server to store the value on.
-	 * @param   bool          $byKey      True to store in internal cache by key; false to not store by key
-	 *
-	 * @return  bool|mixed                  Cached object value.
+	 * @return  bool|mixed                Cached object value.
 	 */
-	public function get( $key, $group = 'default', $server_key = '', $byKey = false ) {
-		$derived_key = $this->buildKey( $key, $group );
+	public function get( $key, $group = 'default' ) {
+		$derived_key = $this->build_key( $key, $group );
 
-		if ( ! in_array( $group, $this->no_redis_groups ) ) {
-			$value = $this->redis->get( $derived_key );
-		} else {
-			if ( isset( $this->cache[$derived_key] ) ) {
-				return is_object( $this->cache[$derived_key] ) ? clone $this->cache[$derived_key] : $this->cache[$derived_key];
-			} elseif ( in_array( $group, $this->no_redis_groups ) ) {
-				return false;
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+			if ( isset( $this->cache[ $derived_key ] ) ) {
+				$this->cache_hits++;
+				return is_object( $this->cache[ $derived_key ] ) ? clone $this->cache[ $derived_key ] : $this->cache[ $derived_key ];
 			} else {
-				$value = $this->redis->get( $derived_key );
+				$this->cache_misses++;
+				return false;
 			}
+		}
+
+		if ( $this->redis->exists( $derived_key ) ) {
+			$this->cache_hits++;
+			$value = $this->restore_value_from_redis( $this->redis->get( $derived_key ) );
+		} else {
+			$this->cache_misses;
+			return false;
 		}
 
 		$this->add_to_internal_cache( $derived_key, $value );
@@ -925,37 +516,176 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * Retrieve multiple values from cache.
+	 *
+	 * Gets multiple values from cache, including across multiple groups
+	 *
+	 * Usage: array( 'group0' => array( 'key0', 'key1', 'key2', ), 'group1' => array( 'key0' ) )
+	 *
+	 * Mirrors the Memcached Object Cache plugin's argument and return-value formats
+	 *
+	 * @param   array                           $groups  Array of groups and keys to retrieve
+	 * @uses    this::filter_redis_get_multi()
+	 * @return  bool|mixed                               Array of cached values, keys in the format $group:$key. Non-existent keys null.
+	 */
+	public function get_multi( $groups ) {
+		if ( empty( $groups ) || ! is_array( $groups ) ) {
+			return false;
+		}
+
+		// Retrieve requested caches and reformat results to mimic Memcached Object Cache's output
+		$cache = array();
+
+		foreach ( $groups as $group => $keys ) {
+			if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+				foreach ( $keys as $key ) {
+					$cache[ $this->build_key( $key, $group ) ] = $this->get( $key, $group );
+				}
+			} else {
+				// Reformat arguments as expected by Redis
+				$derived_keys = array();
+				foreach ( $keys as $key ) {
+					$derived_keys[] = $this->build_key( $key, $group );
+				}
+
+				// Retrieve from cache in a single request
+				$group_cache = $this->redis->mget( $derived_keys );
+
+				// Build an array of values looked up, keyed by the derived cache key
+				$group_cache = array_combine( $derived_keys, $group_cache );
+
+				// Restores cached data to its original data type
+				$group_cache = array_map( array( $this, 'restore_value_from_redis' ), $group_cache );
+
+				// Redis returns null for values not found in cache, but expected return value is false in this instance
+				$group_cache = array_map( array( $this, 'filter_redis_get_multi' ), $group_cache );
+
+				$cache = array_merge( $cache, $group_cache );
+			}
+		}
+
+		// Add to the internal cache the found values from Redis
+		foreach ( $cache as $key => $value ) {
+			if ( $value ) {
+				$this->cache_hits++;
+				$this->add_to_internal_cache( $key, $value );
+			} else {
+				$this->cache_misses++;
+			}
+		}
+
+		return $cache;
+	}
+
+	/**
 	 * Sets a value in cache.
 	 *
-	 * The value is set whether or not this key already exists in memcached.
-	 *
-	 * @link http://www.php.net/manual/en/memcached.set.php
+	 * The value is set whether or not this key already exists in Redis.
 	 *
 	 * @param   string $key        The key under which to store the value.
 	 * @param   mixed  $value      The value to store.
 	 * @param   string $group      The group value appended to the $key.
 	 * @param   int    $expiration The expiration time, defaults to 0.
-	 * @param   string $server_key The key identifying the server to store the value on.
-	 * @param   bool   $byKey      True to store in internal cache by key; false to not store by key
-	 *
-	 * @return  bool                    Returns TRUE on success or FALSE on failure.
+	 * @return  bool               Returns TRUE on success or FALSE on failure.
 	 */
-	public function set( $key, $value, $group = 'default', $expiration = 0, $server_key = '' ) {
-		$derived_key = $this->buildKey( $key, $group );
+	public function set( $key, $value, $group = 'default', $expiration = 0 ) {
+		$derived_key = $this->build_key( $key, $group );
 
-		// If group is a non-Redis group, save to runtime cache, not Redis
-		if ( in_array( $group, $this->no_redis_groups ) ) {
+		// If group is a non-Redis group, save to internal cache, not Redis
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
 			$this->add_to_internal_cache( $derived_key, $value );
 
 			return true;
 		}
 
 		// Save to Redis
-		$result = $this->redis->setex( $derived_key, $value, absint( $expiration ) );
-
-		$this->add_to_internal_cache( $derived_key, $value );
+		$expiration = absint( $expiration );
+		if ( $expiration ) {
+			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
+		} else {
+			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) ) );
+		}
 
 		return $result;
+	}
+
+	/**
+	 * Increment a Redis counter by the amount specified
+	 *
+	 * @param  string $key
+	 * @param  int    $offset
+	 * @param  string $group
+	 * @return bool
+	 */
+	public function increment( $key, $offset = 1, $group = 'default' ) {
+		$derived_key = $this->build_key( $key, $group );
+		$offset = (int) $offset;
+
+		// If group is a non-Redis group, save to internal cache, not Redis
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+			$value = $this->get_from_internal_cache( $derived_key );
+			$value += $offset;
+			$this->add_to_internal_cache( $derived_key, $value );
+
+			return true;
+		}
+
+		// Save to Redis
+		$result = $this->parse_predis_response( $this->redis->incrBy( $derived_key, $offset ) );
+
+		$this->add_to_internal_cache( $derived_key, (int) $this->redis->get( $derived_key ) );
+
+		return $result;
+	}
+
+	/**
+	 * Decrement a Redis counter by the amount specified
+	 *
+	 * @param  string $key
+	 * @param  int    $offset
+	 * @param  string $group
+	 * @return bool
+	 */
+	public function decrement( $key, $offset = 1, $group = 'default' ) {
+		$derived_key = $this->build_key( $key, $group );
+		$offset = (int) $offset;
+
+		// If group is a non-Redis group, save to internal cache, not Redis
+		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
+			$value = $this->get_from_internal_cache( $derived_key );
+			$value -= $offset;
+			$this->add_to_internal_cache( $derived_key, $value );
+
+			return true;
+		}
+
+		// Save to Redis
+		$result = $this->parse_predis_response( $this->redis->decrBy( $derived_key, $offset ) );
+
+		$this->add_to_internal_cache( $derived_key, (int) $this->redis->get( $derived_key ) );
+
+		return $result;
+	}
+
+	/**
+	 * Render data about current cache requests
+	 *
+	 * @return string
+	 */
+	public function stats() {
+		?><p>
+			<strong><?php _e( 'Cache Hits:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
+			<strong><?php _e( 'Cache Misses:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
+			<strong><?php _e( 'Using Redis?', 'wordpress-redis-backend' ); ?></strong> <?php echo $this->can_redis() ? __( 'yes', 'wordpress-redis-backend' ) : __( 'no', 'wordpress-redis-backend' ); ?><br />
+		</p>
+		<p>&nbsp;</p>
+		<p><strong><?php _e( 'Caches Retrieved:', 'wordpress-redis-backend' ); ?></strong></p>
+		<ul>
+			<li><em><?php _e( 'prefix:group:key - size in kilobytes', 'wordpress-redis-backend' ); ?></em></li>
+		<?php foreach ( $this->cache as $group => $cache ) : ?>
+			<li><?php printf( __( '%s - %s %s', 'wordpress-redis-backend' ), esc_html( $group ), number_format_i18n( strlen( serialize( $cache ) ) / 1024, 2 ), __( 'kb', 'wordpress-redis-backend' ) ); ?></li>
+		<?php endforeach; ?>
+		</ul><?php
 	}
 
 	/**
@@ -969,7 +699,7 @@ class WP_Object_Cache {
 	 *
 	 * @return  string
 	 */
-	public function buildKey( $key, $group = 'default' ) {
+	public function build_key( $key, $group = 'default' ) {
 		if ( empty( $group ) ) {
 			$group = 'default';
 		}
@@ -981,6 +711,69 @@ class WP_Object_Cache {
 		}
 
 		return preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . "$prefix$group:$key" );
+	}
+
+	/**
+	 * Prepare a value for storage in Redis, which only accepts strings
+	 *
+	 * @param mixed $value
+	 * @return string
+	 */
+	protected function prepare_value_for_redis( $value ) {
+		$value = maybe_serialize( $value );
+
+		return $value;
+	}
+
+	/**
+	 * Restore a value stored in Redis to its original data type
+	 *
+	 * @param string $value
+	 * @return mixed
+	 */
+	protected function restore_value_from_redis( $value ) {
+		$value = maybe_unserialize( $value );
+
+		return $value;
+	}
+
+	/**
+	 * Convert data types when using Redis MGET
+	 *
+	 * When requesting multiple keys, those not found in cache are assigned the value null upon return.
+	 * Expected value in this case is false, so we convert
+	 *
+	 * @param   string  $value  Value to possibly convert
+	 * @return  string          Converted value
+	 */
+	protected function filter_redis_get_multi( $value ) {
+		if ( is_null( $value ) ) {
+			$value = false;
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Convert the response fro Predis into something meaningful
+	 *
+	 * @param mixed $response
+	 * @return mixed
+	 */
+	protected function parse_predis_response( $response ) {
+		if ( is_bool( $response ) ) {
+			return $response;
+		}
+
+		if ( is_numeric( $response ) ) {
+			return (bool) $response;
+		}
+
+		if ( is_object( $response ) && method_exists( $response, 'getPayload' ) ) {
+			return 'OK' === $response->getPayload();
+		}
+
+		return false;
 	}
 
 	/**
@@ -1001,8 +794,8 @@ class WP_Object_Cache {
 	 *
 	 * @return  bool|mixed              Value on success; false on failure.
 	 */
-	public function get_from_runtime_cache( $key, $group ) {
-		$derived_key = $this->buildKey( $key, $group );
+	public function get_from_internal_cache( $key, $group ) {
+		$derived_key = $this->build_key( $key, $group );
 
 		if ( isset( $this->cache[ $derived_key ] ) ) {
 			return $this->cache[ $derived_key ];
@@ -1012,15 +805,33 @@ class WP_Object_Cache {
 	}
 
 	/**
+	 * In multisite, switch blog prefix when switching blogs
+	 *
+	 * @param int $_blog_id
+	 * @return bool
+	 */
+	public function switch_to_blog( $_blog_id ) {
+		if ( ! is_multisite() ) {
+			return false;
+		}
+
+		$this->blog_prefix = $_blog_id . ':';
+		return true;
+	}
+
+	/**
 	 * Sets the list of global groups.
 	 *
 	 * @param array $groups List of groups that are global.
 	 */
-	function add_global_groups( $groups ) {
+	public function add_global_groups( $groups ) {
 		$groups = (array) $groups;
 
-		$groups = array_fill_keys( $groups, true );
-		$this->global_groups = array_merge( $this->global_groups, $groups );
+		if ( $this->can_redis() ) {
+			$this->global_groups = array_unique( array_merge( $this->global_groups, $groups ) );
+		} else {
+			$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
+		}
 	}
 
 	/**
@@ -1028,10 +839,9 @@ class WP_Object_Cache {
 	 *
 	 * @param array $groups List of groups that are to be ignored.
 	 */
-	function add_non_persistent_groups( $groups ) {
+	public function add_non_persistent_groups( $groups ) {
 		$groups = (array) $groups;
 
-		$groups = array_fill_keys( $groups, true );
-		$this->no_redis_groups = array_merge( $this->no_redis_groups, $groups );
+		$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
 	}
 }
