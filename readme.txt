@@ -1,11 +1,11 @@
 === Redis Object Cache ===
-Contributors: ericmann, ethitter
-Tags: cache, object cache, redis
+Contributors:      ericmann, ethitter
+Tags:              cache, object cache, redis
 Requires at least: 3.0.1
-Tested up to: 3.9
-Stable tag: 1.0
-License: GPLv2 or later
-License URI: http://www.gnu.org/licenses/gpl-2.0.html
+Tested up to:      3.9
+Stable tag:        1.0
+License:           GPLv2 or later
+License URI:       http://www.gnu.org/licenses/gpl-2.0.html
 
 A persistent object cache powered by Redis.
 

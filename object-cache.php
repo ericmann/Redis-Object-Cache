@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name: Redis Object Cache
- * Author: Eric Mann & Erick Hitter
- * Version 1.0
+ * Author:      Eric Mann & Erick Hitter
+ * Version:     1.0
  */
 
 /**
@@ -15,6 +15,8 @@
  * @param mixed  $value      The value to store.
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
+ *
+ * @global WP_Object_Cache $wp_object_cache
  *
  * @return bool              Returns TRUE on success or FALSE on failure.
  */
@@ -44,6 +46,8 @@ function wp_cache_close() {
  * @param int    $offset The amount by which to decrement the item's value.
  * @param string $group  The group value appended to the $key.
  *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return int|bool      Returns item's new value on success or FALSE on failure.
  */
 function wp_cache_decr( $key, $offset = 1, $group = '' ) {
@@ -58,6 +62,8 @@ function wp_cache_decr( $key, $offset = 1, $group = '' ) {
  * @param string $group  The group value appended to the $key.
  * @param int    $time   The amount of time the server will wait to delete the item in seconds.
  *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return bool           Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_delete( $key, $group = '', $time = 0 ) {
@@ -69,6 +75,8 @@ function wp_cache_delete( $key, $group = '', $time = 0 ) {
  * Invalidate all items in the cache.
  *
  * @param int $delay  Number of seconds to wait before invalidating the items.
+ *
+ * @global WP_Object_Cache $wp_object_cache
  *
  * @return bool             Returns TRUE on success or FALSE on failure.
  */
@@ -84,6 +92,8 @@ function wp_cache_flush( $delay = 0 ) {
  *
  * @param string      $key        The key under which to store the value.
  * @param string      $group      The group value appended to the $key.
+ *
+ * @global WP_Object_Cache $wp_object_cache
  *
  * @return bool|mixed             Cached object value.
  */
@@ -102,6 +112,9 @@ function wp_cache_get( $key, $group = '' ) {
  * Mirrors the Memcached Object Cache plugin's argument and return-value formats
  *
  * @param   array       $groups  Array of groups and keys to retrieve
+ *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return  bool|mixed           Array of cached values, keys in the format $group:$key. Non-existent keys false
  */
 function wp_cache_get_multi( $groups ) {
@@ -116,6 +129,8 @@ function wp_cache_get_multi( $groups ) {
  * @param int    $offset The amount by which to increment the item's value.
  * @param string $group  The group value appended to the $key.
  *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return int|bool      Returns item's new value on success or FALSE on failure.
  */
 function wp_cache_incr( $key, $offset = 1, $group = '' ) {
@@ -127,6 +142,7 @@ function wp_cache_incr( $key, $offset = 1, $group = '' ) {
  * Sets up Object Cache Global and assigns it.
  *
  * @global  WP_Object_Cache $wp_object_cache    WordPress Object Cache
+ *
  * @return  void
  */
 function wp_cache_init() {
@@ -145,6 +161,8 @@ function wp_cache_init() {
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
  *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return bool              Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
@@ -162,6 +180,8 @@ function wp_cache_replace( $key, $value, $group = '', $expiration = 0 ) {
  * @param string $group      The group value appended to the $key.
  * @param int    $expiration The expiration time, defaults to 0.
  *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return bool              Returns TRUE on success or FALSE on failure.
  */
 function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
@@ -175,6 +195,9 @@ function wp_cache_set( $key, $value, $group = '', $expiration = 0 ) {
  * This changes the blog id used to create keys in blog specific groups.
  *
  * @param  int $_blog_id Blog ID
+ *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return bool
  */
 function wp_cache_switch_to_blog( $_blog_id ) {
@@ -187,6 +210,8 @@ function wp_cache_switch_to_blog( $_blog_id ) {
  *
  * @param   string|array $groups     A group or an array of groups to add.
  *
+ * @global WP_Object_Cache $wp_object_cache
+ *
  * @return  void
  */
 function wp_cache_add_global_groups( $groups ) {
@@ -198,6 +223,8 @@ function wp_cache_add_global_groups( $groups ) {
  * Adds a group or set of groups to the list of non-Redis groups.
  *
  * @param   string|array $groups     A group or an array of groups to add.
+ *
+ * @global WP_Object_Cache $wp_object_cache
  *
  * @return  void
  */
@@ -623,7 +650,7 @@ class WP_Object_Cache {
 
 		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
-			$value = $this->get_from_internal_cache( $derived_key );
+			$value = $this->get_from_internal_cache( $derived_key, $group );
 			$value += $offset;
 			$this->add_to_internal_cache( $derived_key, $value );
 
@@ -652,7 +679,7 @@ class WP_Object_Cache {
 
 		// If group is a non-Redis group, save to internal cache, not Redis
 		if ( in_array( $group, $this->no_redis_groups ) || ! $this->can_redis() ) {
-			$value = $this->get_from_internal_cache( $derived_key );
+			$value = $this->get_from_internal_cache( $derived_key, $group );
 			$value -= $offset;
 			$this->add_to_internal_cache( $derived_key, $value );
 
