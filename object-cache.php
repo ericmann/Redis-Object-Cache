@@ -320,6 +320,9 @@ class WP_Object_Cache {
 		if ( defined( 'WP_REDIS_BACKEND_PORT' ) && WP_REDIS_BACKEND_PORT ) {
 			$redis['port'] = WP_REDIS_BACKEND_PORT;
 		}
+		if ( defined( 'WP_REDIS_BACKEND_AUTH' ) && WP_REDIS_BACKEND_AUTH ) {
+			$redis['auth'] = WP_REDIS_BACKEND_AUTH;
+		}
 		if ( defined( 'WP_REDIS_BACKEND_DB' ) && WP_REDIS_BACKEND_DB ) {
 			$redis['database'] = WP_REDIS_BACKEND_DB;
 		}
@@ -329,6 +332,10 @@ class WP_Object_Cache {
 			try {
 				$this->redis = new Redis();
 				$this->redis->connect( $redis['host'], $redis['port'] );
+				
+				if ( isset( $redis['auth'] ) ) {
+					$this->redis->auth( $redis['auth'] );
+				}
 
 				if ( isset( $redis['database'] ) ) {
 					$this->redis->select( $redis['database'] );
