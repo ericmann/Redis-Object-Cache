@@ -326,11 +326,17 @@ class WP_Object_Cache {
 		if ( defined( 'WP_REDIS_BACKEND_DB' ) && WP_REDIS_BACKEND_DB ) {
 			$redis['database'] = WP_REDIS_BACKEND_DB;
 		}
+		if ( ( defined( 'WP_REDIS_SERIALIZER' ) ) ) {
+			$redis['serializer'] =  WP_REDIS_SERIALIZER;
+		} else {
+			$redis['serializer'] =  Redis::SERIALIZER_PHP;
+		}
 
 		// Use Redis PECL library.
 		try {
 			$this->redis = new Redis();
 			$this->redis->connect( $redis['host'], $redis['port'] );
+			$this->redis->setOption( Redis::OPT_SERIALIZER, $redis['serializer'] );
 			
 			if ( isset( $redis['auth'] ) ) {
 				$this->redis->auth( $redis['auth'] );
