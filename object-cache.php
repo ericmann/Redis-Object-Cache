@@ -710,16 +710,18 @@ class WP_Object_Cache {
 	 */
 	public function stats() {
 		?><p>
-			<strong><?php _e( 'Cache Hits:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
-			<strong><?php _e( 'Cache Misses:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
-			<strong><?php _e( 'Using Redis?', 'wordpress-redis-backend' ); ?></strong> <?php echo $this->can_redis() ? __( 'yes', 'wordpress-redis-backend' ) : __( 'no', 'wordpress-redis-backend' ); ?><br />
+			<strong><?php $this->_i18n( '_e', 'Cache Hits:' ); ?></strong> <?php echo $this->_i18n( 'number_format_i18n', $this->cache_hits, false ); ?><br />
+			<strong><?php $this->_i18n( '_e', 'Cache Misses:' ); ?></strong> <?php echo $this->_i18n( 'number_format_i18n', $this->cache_misses, false ); ?><br />
+			<strong><?php $this->_i18n( '_e', 'Using Redis?' ); ?></strong> 
+			<?php echo $this->can_redis() ? $this->_i18n( '__', 'yes' ) : $this->_i18n( '__', 'no' );
+			?><br />
 		</p>
 		<p>&nbsp;</p>
-		<p><strong><?php _e( 'Caches Retrieved:', 'wordpress-redis-backend' ); ?></strong></p>
+		<p><strong><?php $this->_i18n( '_e',  'Caches Retrieved:' ); ?></strong></p>
 		<ul>
-			<li><em><?php _e( 'prefix:group:key - size in kilobytes', 'wordpress-redis-backend' ); ?></em></li>
+			<li><em><?php $this->_i18n( '_e',  'prefix:group:key - size in kilobytes' ); ?></em></li>
 		<?php foreach ( $this->cache as $group => $cache ) : ?>
-			<li><?php printf( __( '%s - %s %s', 'wordpress-redis-backend' ), esc_html( $group ), number_format_i18n( strlen( serialize( $cache ) ) / 1024, 2 ), __( 'kb', 'wordpress-redis-backend' ) ); ?></li>
+			<li><?php printf( $this->_i18n( '__', '%s - %s %s' ), $this->_esc_html( $group, false ), $this->_i18n( 'number_format_i18n', strlen( serialize( $cache ) ) / 1024, false, 2 ), $this->_i18n( '__', 'kb' ) ); ?></li>
 		<?php endforeach; ?>
 		</ul><?php
 	}
@@ -879,5 +881,53 @@ class WP_Object_Cache {
 		$groups = (array) $groups;
 
 		$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
+	}
+	/**
+	 * Run a value through an i18n WP function if it exists. Otherwise, just rpass through.
+	 *
+	 * Since this class may run befor the i18n methods are loaded in WP, we'll make sure they
+	 * exist before using them. Most require a text domain, some don't, so the second param allows
+	 * specifiying which type is being called.
+	 * 
+	 * @param  string $method The WP method to pass the string through if it exists.
+	 * @param  string $string The string to internationalize.
+	 * @param  bool   $domain Whether or not to pass the text domain to the method as well.
+	 * @param  mixed  $params Any extra param or array of params to send to the method.
+	 * @return string         The maybe internationalaized string.
+	 */
+	protected function _i18n( $method, $string, $domain = true, $params = array() ) {
+		// Pass through if the method doesn't exist.
+		if ( ! function_exists( $method ) ) {
+			return $string;
+		}
+		// Allow non-array single extra values
+		if ( ! is_array( $params ) ) {
+			$params = array( $params );
+		}
+		// Add domain param if needed.
+		if ( (bool) $domain ) {
+			array_unshift( $params, 'wordpress-redis-backend' );
+		}
+		// Add the string
+		array_unshift( $params, $string );
+
+		return call_user_func_array( $method, $params );
+	}
+	/**
+	 * Try to escape any HTML from output, if not available, strip tags.
+	 *
+	 * This helper ensures invalid HTML output is escaped with esc_html if possible. If not,
+	 * it will use the native strip_tags instead to simply remove them. This is needed since
+	 * in some circumstances this may be loaded before esc_html is available.
+	 *
+	 * @param  string $string The string to escape or strip.
+	 * @return string        The safe string for output.
+	 */
+	public function _esc_html( $string ) {
+		if ( function_exists( 'esc_html' ) ) {
+			return esc_html( $string );
+		} else {
+			return strip_tags( $string );
+		}
 	}
 }
