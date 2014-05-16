@@ -327,38 +327,24 @@ class WP_Object_Cache {
 			$redis['database'] = WP_REDIS_BACKEND_DB;
 		}
 
-		// Use Redis PECL library if available, otherwise default to bundled Predis library
-		if ( class_exists( 'Redis' ) ) {
-			try {
-				$this->redis = new Redis();
-				$this->redis->connect( $redis['host'], $redis['port'] );
-				
-				if ( isset( $redis['auth'] ) ) {
-					$this->redis->auth( $redis['auth'] );
-				}
-
-				if ( isset( $redis['database'] ) ) {
-					$this->redis->select( $redis['database'] );
-				}
-
-				$this->redis_connected = true;
-			} catch ( RedisException $e ) {
-				$this->redis_connected = false;
+		// Use Redis PECL library.
+		try {
+			$this->redis = new Redis();
+			$this->redis->connect( $redis['host'], $redis['port'] );
+			
+			if ( isset( $redis['auth'] ) ) {
+				$this->redis->auth( $redis['auth'] );
 			}
-		} else {
-			try {
-				require_once 'predis/autoload.php';
-				$this->redis = new Predis\Client( $redis );
 
-				$this->redis_connected = true;
-			} catch ( Predis\Connection\ConnectionException $e ) {
-				$this->redis_connected = false;
+			if ( isset( $redis['database'] ) ) {
+				$this->redis->select( $redis['database'] );
 			}
-		}
 
-		// When Redis is unavailable, fall back to the internal back by forcing all groups to be "no redis" groups
-		if ( ! $this->redis_connected ) {
+			$this->redis_connected = true;
+		} catch ( RedisException $e ) {
+			// When Redis is unavailable, fall back to the internal back by forcing all groups to be "no redis" groups
 			$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $this->global_groups ) );
+			$this->redis_connected = false;
 		}
 
 		/**
