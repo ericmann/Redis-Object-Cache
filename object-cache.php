@@ -455,7 +455,7 @@ class WP_Object_Cache {
 		}
 
 		// Save to Redis
-		$expiration = absint( $expiration );
+		$expiration = abs( intval( $expiration ) );
 		if ( $expiration ) {
 			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
 		} else {
@@ -500,7 +500,7 @@ class WP_Object_Cache {
 	 * @return  bool            Returns TRUE on success or FALSE on failure.
 	 */
 	public function flush( $delay = 0 ) {
-		$delay = absint( $delay );
+		$delay = abs( intval( $delay ) );
 		if ( $delay ) {
 			sleep( $delay );
 		}
@@ -633,7 +633,7 @@ class WP_Object_Cache {
 		}
 
 		// Save to Redis
-		$expiration = absint( $expiration );
+		$expiration = abs( intval( $expiration ) );
 		if ( $expiration ) {
 			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
 		} else {
