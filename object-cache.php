@@ -451,9 +451,9 @@ class WP_Object_Cache {
 		// Save to Redis
 		$expiration = abs( intval( $expiration ) );
 		if ( $expiration ) {
-			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $value ) );
 		} else {
-			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $value ) );
 		}
 
 		return $result;
@@ -532,7 +532,7 @@ class WP_Object_Cache {
 
 		if ( $this->redis->exists( $derived_key ) ) {
 			$this->cache_hits++;
-			$value = $this->restore_value_from_redis( $this->redis->get( $derived_key ) );
+			$value = $this->redis->get( $derived_key );
 		} else {
 			$this->cache_misses;
 			return false;
@@ -582,9 +582,6 @@ class WP_Object_Cache {
 				// Build an array of values looked up, keyed by the derived cache key
 				$group_cache = array_combine( $derived_keys, $group_cache );
 
-				// Restores cached data to its original data type
-				$group_cache = array_map( array( $this, 'restore_value_from_redis' ), $group_cache );
-
 				// Redis returns null for values not found in cache, but expected return value is false in this instance
 				$group_cache = array_map( array( $this, 'filter_redis_get_multi' ), $group_cache );
 
@@ -629,9 +626,9 @@ class WP_Object_Cache {
 		// Save to Redis
 		$expiration = abs( intval( $expiration ) );
 		if ( $expiration ) {
-			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $value ) );
 		} else {
-			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $value ) );
 		}
 
 		return $result;
@@ -741,30 +738,6 @@ class WP_Object_Cache {
 		}
 
 		return preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . "$prefix$group:$key" );
-	}
-
-	/**
-	 * Prepare a value for storage in Redis, which only accepts strings
-	 *
-	 * @param mixed $value
-	 * @return string
-	 */
-	protected function prepare_value_for_redis( $value ) {
-		$value = maybe_serialize( $value );
-
-		return $value;
-	}
-
-	/**
-	 * Restore a value stored in Redis to its original data type
-	 *
-	 * @param string $value
-	 * @return mixed
-	 */
-	protected function restore_value_from_redis( $value ) {
-		$value = maybe_unserialize( $value );
-
-		return $value;
 	}
 
 	/**
