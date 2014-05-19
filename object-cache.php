@@ -326,39 +326,31 @@ class WP_Object_Cache {
 		if ( defined( 'WP_REDIS_BACKEND_DB' ) && WP_REDIS_BACKEND_DB ) {
 			$redis['database'] = WP_REDIS_BACKEND_DB;
 		}
-
-		// Use Redis PECL library if available, otherwise default to bundled Predis library
-		if ( class_exists( 'Redis' ) ) {
-			try {
-				$this->redis = new Redis();
-				$this->redis->connect( $redis['host'], $redis['port'] );
-				
-				if ( isset( $redis['auth'] ) ) {
-					$this->redis->auth( $redis['auth'] );
-				}
-
-				if ( isset( $redis['database'] ) ) {
-					$this->redis->select( $redis['database'] );
-				}
-
-				$this->redis_connected = true;
-			} catch ( RedisException $e ) {
-				$this->redis_connected = false;
-			}
+		if ( ( defined( 'WP_REDIS_SERIALIZER' ) ) ) {
+			$redis['serializer'] =  WP_REDIS_SERIALIZER;
 		} else {
-			try {
-				require_once 'predis/autoload.php';
-				$this->redis = new Predis\Client( $redis );
-
-				$this->redis_connected = true;
-			} catch ( Predis\Connection\ConnectionException $e ) {
-				$this->redis_connected = false;
-			}
+			$redis['serializer'] =  Redis::SERIALIZER_PHP;
 		}
 
-		// When Redis is unavailable, fall back to the internal back by forcing all groups to be "no redis" groups
-		if ( ! $this->redis_connected ) {
+		// Use Redis PECL library.
+		try {
+			$this->redis = new Redis();
+			$this->redis->connect( $redis['host'], $redis['port'] );
+			$this->redis->setOption( Redis::OPT_SERIALIZER, $redis['serializer'] );
+			
+			if ( isset( $redis['auth'] ) ) {
+				$this->redis->auth( $redis['auth'] );
+			}
+
+			if ( isset( $redis['database'] ) ) {
+				$this->redis->select( $redis['database'] );
+			}
+
+			$this->redis_connected = true;
+		} catch ( RedisException $e ) {
+			// When Redis is unavailable, fall back to the internal back by forcing all groups to be "no redis" groups
 			$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $this->global_groups ) );
+			$this->redis_connected = false;
 		}
 
 		/**
@@ -370,8 +362,10 @@ class WP_Object_Cache {
 		}
 
 		// Assign global and blog prefixes for use with keys
-		$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
-		$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
+		if ( function_exists( 'is_multisite' ) ) {
+			$this->global_prefix = ( is_multisite() || defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
+			$this->blog_prefix   = ( is_multisite() ? $blog_id : $table_prefix ) . ':';
+		}
 	}
 
 	/**
@@ -455,11 +449,11 @@ class WP_Object_Cache {
 		}
 
 		// Save to Redis
-		$expiration = absint( $expiration );
+		$expiration = abs( intval( $expiration ) );
 		if ( $expiration ) {
-			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $value ) );
 		} else {
-			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $value ) );
 		}
 
 		return $result;
@@ -500,7 +494,7 @@ class WP_Object_Cache {
 	 * @return  bool            Returns TRUE on success or FALSE on failure.
 	 */
 	public function flush( $delay = 0 ) {
-		$delay = absint( $delay );
+		$delay = abs( intval( $delay ) );
 		if ( $delay ) {
 			sleep( $delay );
 		}
@@ -538,7 +532,7 @@ class WP_Object_Cache {
 
 		if ( $this->redis->exists( $derived_key ) ) {
 			$this->cache_hits++;
-			$value = $this->restore_value_from_redis( $this->redis->get( $derived_key ) );
+			$value = $this->redis->get( $derived_key );
 		} else {
 			$this->cache_misses;
 			return false;
@@ -588,9 +582,6 @@ class WP_Object_Cache {
 				// Build an array of values looked up, keyed by the derived cache key
 				$group_cache = array_combine( $derived_keys, $group_cache );
 
-				// Restores cached data to its original data type
-				$group_cache = array_map( array( $this, 'restore_value_from_redis' ), $group_cache );
-
 				// Redis returns null for values not found in cache, but expected return value is false in this instance
 				$group_cache = array_map( array( $this, 'filter_redis_get_multi' ), $group_cache );
 
@@ -633,11 +624,11 @@ class WP_Object_Cache {
 		}
 
 		// Save to Redis
-		$expiration = absint( $expiration );
+		$expiration = abs( intval( $expiration ) );
 		if ( $expiration ) {
-			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->setex( $derived_key, $expiration, $value ) );
 		} else {
-			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $this->prepare_value_for_redis( $value ) ) );
+			$result = $this->parse_predis_response( $this->redis->set( $derived_key, $value ) );
 		}
 
 		return $result;
@@ -708,16 +699,18 @@ class WP_Object_Cache {
 	 */
 	public function stats() {
 		?><p>
-			<strong><?php _e( 'Cache Hits:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_hits ); ?><br />
-			<strong><?php _e( 'Cache Misses:', 'wordpress-redis-backend' ); ?></strong> <?php echo number_format_i18n( $this->cache_misses ); ?><br />
-			<strong><?php _e( 'Using Redis?', 'wordpress-redis-backend' ); ?></strong> <?php echo $this->can_redis() ? __( 'yes', 'wordpress-redis-backend' ) : __( 'no', 'wordpress-redis-backend' ); ?><br />
+			<strong><?php $this->_i18n( '_e', 'Cache Hits:' ); ?></strong> <?php echo $this->_i18n( 'number_format_i18n', $this->cache_hits, false ); ?><br />
+			<strong><?php $this->_i18n( '_e', 'Cache Misses:' ); ?></strong> <?php echo $this->_i18n( 'number_format_i18n', $this->cache_misses, false ); ?><br />
+			<strong><?php $this->_i18n( '_e', 'Using Redis?' ); ?></strong> 
+			<?php echo $this->can_redis() ? $this->_i18n( '__', 'yes' ) : $this->_i18n( '__', 'no' );
+			?><br />
 		</p>
 		<p>&nbsp;</p>
-		<p><strong><?php _e( 'Caches Retrieved:', 'wordpress-redis-backend' ); ?></strong></p>
+		<p><strong><?php $this->_i18n( '_e',  'Caches Retrieved:' ); ?></strong></p>
 		<ul>
-			<li><em><?php _e( 'prefix:group:key - size in kilobytes', 'wordpress-redis-backend' ); ?></em></li>
+			<li><em><?php $this->_i18n( '_e',  'prefix:group:key - size in kilobytes' ); ?></em></li>
 		<?php foreach ( $this->cache as $group => $cache ) : ?>
-			<li><?php printf( __( '%s - %s %s', 'wordpress-redis-backend' ), esc_html( $group ), number_format_i18n( strlen( serialize( $cache ) ) / 1024, 2 ), __( 'kb', 'wordpress-redis-backend' ) ); ?></li>
+			<li><?php printf( $this->_i18n( '__', '%s - %s %s' ), $this->_esc_html( $group, false ), $this->_i18n( 'number_format_i18n', strlen( serialize( $cache ) ) / 1024, false, 2 ), $this->_i18n( '__', 'kb' ) ); ?></li>
 		<?php endforeach; ?>
 		</ul><?php
 	}
@@ -745,30 +738,6 @@ class WP_Object_Cache {
 		}
 
 		return preg_replace( '/\s+/', '', WP_CACHE_KEY_SALT . "$prefix$group:$key" );
-	}
-
-	/**
-	 * Prepare a value for storage in Redis, which only accepts strings
-	 *
-	 * @param mixed $value
-	 * @return string
-	 */
-	protected function prepare_value_for_redis( $value ) {
-		$value = maybe_serialize( $value );
-
-		return $value;
-	}
-
-	/**
-	 * Restore a value stored in Redis to its original data type
-	 *
-	 * @param string $value
-	 * @return mixed
-	 */
-	protected function restore_value_from_redis( $value ) {
-		$value = maybe_unserialize( $value );
-
-		return $value;
 	}
 
 	/**
@@ -845,7 +814,7 @@ class WP_Object_Cache {
 	 * @return bool
 	 */
 	public function switch_to_blog( $_blog_id ) {
-		if ( ! is_multisite() ) {
+		if ( ! function_exists( 'is_multisite' ) || ! is_multisite() ) {
 			return false;
 		}
 
@@ -877,5 +846,53 @@ class WP_Object_Cache {
 		$groups = (array) $groups;
 
 		$this->no_redis_groups = array_unique( array_merge( $this->no_redis_groups, $groups ) );
+	}
+	/**
+	 * Run a value through an i18n WP function if it exists. Otherwise, just rpass through.
+	 *
+	 * Since this class may run befor the i18n methods are loaded in WP, we'll make sure they
+	 * exist before using them. Most require a text domain, some don't, so the second param allows
+	 * specifiying which type is being called.
+	 * 
+	 * @param  string $method The WP method to pass the string through if it exists.
+	 * @param  string $string The string to internationalize.
+	 * @param  bool   $domain Whether or not to pass the text domain to the method as well.
+	 * @param  mixed  $params Any extra param or array of params to send to the method.
+	 * @return string         The maybe internationalaized string.
+	 */
+	protected function _i18n( $method, $string, $domain = true, $params = array() ) {
+		// Pass through if the method doesn't exist.
+		if ( ! function_exists( $method ) ) {
+			return $string;
+		}
+		// Allow non-array single extra values
+		if ( ! is_array( $params ) ) {
+			$params = array( $params );
+		}
+		// Add domain param if needed.
+		if ( (bool) $domain ) {
+			array_unshift( $params, 'wordpress-redis-backend' );
+		}
+		// Add the string
+		array_unshift( $params, $string );
+
+		return call_user_func_array( $method, $params );
+	}
+	/**
+	 * Try to escape any HTML from output, if not available, strip tags.
+	 *
+	 * This helper ensures invalid HTML output is escaped with esc_html if possible. If not,
+	 * it will use the native strip_tags instead to simply remove them. This is needed since
+	 * in some circumstances this may be loaded before esc_html is available.
+	 *
+	 * @param  string $string The string to escape or strip.
+	 * @return string        The safe string for output.
+	 */
+	public function _esc_html( $string ) {
+		if ( function_exists( 'esc_html' ) ) {
+			return esc_html( $string );
+		} else {
+			return strip_tags( $string );
+		}
 	}
 }
