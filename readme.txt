@@ -13,14 +13,14 @@ A persistent object cache powered by Redis.
 
 Object caching backend using Redis for persistent storage. Implements all methods specified by WordPress Core. Supports multisite.
 
-The plugin supports both the [Redis PECL module](http://pecl.php.net/package/redis) and the [Predis library](https://github.com/nrk/predis) to connect to Redis.
+The plugin supports the [Redis PECL module](http://pecl.php.net/package/redis) to connect to Redis.
 
 **You must install the Redis server before using this plugin!**
 
 == Installation ==
 
 1. Install and configure Redis. There is a good tutorial [here](http://www.saltwebsites.com/2012/install-redis-245-service-centos-6).
-2. Install the [Redis PECL module](http://pecl.php.net/package/redis) or place the Predis library in the `/wp-content/predis` directory.
+2. Install the [Redis PECL module](http://pecl.php.net/package/redis).
 3. Add `object-cache.php` to the `wp-content` directory. It is a drop-in file, not a plugin, so it belongs in the `wp-content` directory, not the `plugins` directory.
 4. By default, the script will connect to Redis at 127.0.0.1:6379. See the *Connecting to Redis* FAQ for further options.
 
